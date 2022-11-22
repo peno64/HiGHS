@@ -30,9 +30,10 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         run: |
           cmake $GITHUB_WORKSPACE \
-            -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON \ 
+            -DBUILD_SHARED_LIBS=ON \
             -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs \
-            -DFAST_BUILD=ON
+            -DFAST_BUILD=ON \
+            -DCMAKE_BUILD_TYPE=Release 
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
