@@ -41,7 +41,7 @@ jobs:
         # Execute the build.  You can specify a specific target with "--target <NAME>"
         run: |
           cmake --build . --parallel --config Release
-          cmake --install . --config --RELEASE
+          cmake --install . --config --Release
 
         # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
       - name: Build wheels
