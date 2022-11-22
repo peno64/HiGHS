@@ -16,79 +16,79 @@ jobs:
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel==2.7.0
 
-      - name: Install pyomo pybind
-        run: python -m pip install pybind11 pyomo
+  #     - name: Install pyomo pybind
+  #       run: python -m pip install pybind11 pyomo
 
-      - name: Create Build Environment
-        run: cmake -E make_directory ${{runner.workspace}}/build
+  #     - name: Create Build Environment
+  #       run: cmake -E make_directory ${{runner.workspace}}/build
 
-      - name: Create install dir
-        run: cmake -E make_directory ${{runner.workspace}}/installs/
+  #     - name: Create install dir
+  #       run: cmake -E make_directory ${{runner.workspace}}/installs/
 
-      - name: Configure CMake
-        shell: bash
-        working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs -DFAST_BUILD=ON
+  #     - name: Configure CMake
+  #       shell: bash
+  #       working-directory: ${{runner.workspace}}/build
+  #       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs -DFAST_BUILD=ON
 
-      - name: Build
-        working-directory: ${{runner.workspace}}/build
-        shell: bash
-        # Execute the build.  You can specify a specific target with "--target <NAME>"
-        run: |
-          cmake --build . --parallel --config RELEASE
-          cmake --install . --config --RELEASE
+  #     - name: Build
+  #       working-directory: ${{runner.workspace}}/build
+  #       shell: bash
+  #       # Execute the build.  You can specify a specific target with "--target <NAME>"
+  #       run: |
+  #         cmake --build . --parallel --config RELEASE
+  #         cmake --install . --config --RELEASE
 
-        # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
-      - name: Build wheels
-        run: |
-          cd  $GITHUB_WORKSPACE/src/interfaces/highspy
-          $Env:REPAIR_LIBRARY_PATH = ${{runner.workspace}}/installs/highs/lib
-          $Env:REPAIR_LIBRARY_PATH += [IO.Path]::PathSeparator +${{runner.workspace}}/installs/highs/bin
-          $Env:Path += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
-          $Env:LIBPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
-          $Env:PYTHONPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
-          ls $Env:REPAIR_LIBRARY_PATH
-          python -m cibuildwheel --output-dir wheelhouse
+  #       # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
+  #     - name: Build wheels
+  #       run: |
+  #         cd  $GITHUB_WORKSPACE/src/interfaces/highspy
+  #         $Env:REPAIR_LIBRARY_PATH = ${{runner.workspace}}/installs/highs/lib
+  #         $Env:REPAIR_LIBRARY_PATH += [IO.Path]::PathSeparator +${{runner.workspace}}/installs/highs/bin
+  #         $Env:Path += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
+  #         $Env:LIBPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
+  #         $Env:PYTHONPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
+  #         ls $Env:REPAIR_LIBRARY_PATH
+  #         python -m cibuildwheel --output-dir wheelhouse
 
-        # to supply options, put them in 'env', like:
-        env:
-          CIBW_ENVIRONMENT: REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
+  #       # to supply options, put them in 'env', like:
+  #       env:
+  #         CIBW_ENVIRONMENT: REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
 
-      - uses: actions/upload-artifact@v2
-        with:
-          path: ./wheelhouse/*.whl
+  #     - uses: actions/upload-artifact@v2
+  #       with:
+  #         path: ./wheelhouse/*.whl
 
 
-  build_sdist:
-    name: Build source distribution
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+  # build_sdist:
+  #   name: Build source distribution
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: Build sdist
-        run: pipx run build --sdist
+  #     - name: Build sdist
+  #       run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v3
-        with:
-          path: dist/*.tar.gz
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         path: dist/*.tar.gz
 
-  upload_pypi:
-    needs: [build_wheels, build_sdist]
-    runs-on: ubuntu-latest
-    # upload to PyPI on every tag starting with 'v'
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    # alternatively, to publish when a GitHub Release is created, use the following rule:
-    # if: github.event_name == 'release' && github.event.action == 'published'
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          # unpacks default artifact into dist/
-          # if `name: artifact` is omitted, the action will create extra parent dir
-          name: artifact
-          path: dist
+  # upload_pypi:
+  #   needs: [build_wheels, build_sdist]
+  #   runs-on: ubuntu-latest
+  #   # upload to PyPI on every tag starting with 'v'
+  #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+  #   # alternatively, to publish when a GitHub Release is created, use the following rule:
+  #   # if: github.event_name == 'release' && github.event.action == 'published'
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         # unpacks default artifact into dist/
+  #         # if `name: artifact` is omitted, the action will create extra parent dir
+  #         name: artifact
+  #         path: dist
 
-      - uses: pypa/gh-action-pypi-publish@v1.5.0
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
-          # To test: repository_url: https://test.pypi.org/legacy/
+  #     - uses: pypa/gh-action-pypi-publish@v1.5.0
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.pypi_password }}
+  #         # To test: repository_url: https://test.pypi.org/legacy/
