@@ -28,14 +28,18 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs -DFAST_BUILD=ON
+        run: |
+          cmake $GITHUB_WORKSPACE \
+            -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON \ 
+            -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs 
+            -DFAST_BUILD=ON
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
         shell: bash
         # Execute the build.  You can specify a specific target with "--target <NAME>"
         run: |
-          cmake --build . --parallel --config RELEASE
+          cmake --build . --parallel --config Release
           cmake --install . --config --RELEASE
 
         # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
