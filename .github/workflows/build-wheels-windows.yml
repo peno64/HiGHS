@@ -30,29 +30,29 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs -DFAST_BUILD=ON
 
-  #     - name: Build
-  #       working-directory: ${{runner.workspace}}/build
-  #       shell: bash
-  #       # Execute the build.  You can specify a specific target with "--target <NAME>"
-  #       run: |
-  #         cmake --build . --parallel --config RELEASE
-  #         cmake --install . --config --RELEASE
+      - name: Build
+        working-directory: ${{runner.workspace}}/build
+        shell: bash
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: |
+          cmake --build . --parallel --config RELEASE
+          cmake --install . --config --RELEASE
 
-  #       # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
-  #     - name: Build wheels
-  #       run: |
-  #         cd  $GITHUB_WORKSPACE/src/interfaces/highspy
-  #         $Env:REPAIR_LIBRARY_PATH = ${{runner.workspace}}/installs/highs/lib
-  #         $Env:REPAIR_LIBRARY_PATH += [IO.Path]::PathSeparator +${{runner.workspace}}/installs/highs/bin
-  #         $Env:Path += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
-  #         $Env:LIBPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
-  #         $Env:PYTHONPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
-  #         ls $Env:REPAIR_LIBRARY_PATH
-  #         python -m cibuildwheel --output-dir wheelhouse
+        # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
+      - name: Build wheels
+        run: |
+          cd  $GITHUB_WORKSPACE/src/interfaces/highspy
+          $Env:REPAIR_LIBRARY_PATH = ${{runner.workspace}}/installs/highs/lib
+          $Env:REPAIR_LIBRARY_PATH += [IO.Path]::PathSeparator +${{runner.workspace}}/installs/highs/bin
+          $Env:Path += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
+          $Env:LIBPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
+          $Env:PYTHONPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
+          ls $Env:REPAIR_LIBRARY_PATH
+          python -m cibuildwheel --output-dir wheelhouse
 
-  #       # to supply options, put them in 'env', like:
-  #       env:
-  #         CIBW_ENVIRONMENT: REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
+        # to supply options, put them in 'env', like:
+        env:
+          CIBW_ENVIRONMENT: REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
 
   #     - uses: actions/upload-artifact@v2
   #       with:
