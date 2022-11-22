@@ -6,7 +6,6 @@ jobs:
   build_wheels_linux:
     name: Build wheels on linux
     runs-on: ubuntu-20.04 
-    runs-on: macos-11    
 
     steps:
       - uses: actions/checkout@v3
