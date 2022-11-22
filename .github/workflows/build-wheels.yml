@@ -39,26 +39,22 @@ jobs:
           cmake --build . --parallel 
           cmake --install .
 
-      - name: Test
-        working-directory: ${{runner.workspace}}/build
-        shell: bash
-        # Execute tests defined by the CMake configuration.
-        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-        run: ctest --parallel --timeout 300 --output-on-failure
-
       - name: Build wheels
         run: |
           cd  $GITHUB_WORKSPACE/src/interfaces/highspy
-          export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
-          export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
-          export DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
-          ls $REPAIR_LIBRARY_PATH
           python -m cibuildwheel --output-dir wheelhouse
 
+        # export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
+        # export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
+        # export DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
+        # ls $REPAIR_LIBRARY_PATH
         # to supply options, put them in 'env', like:
 
         env:
-          CIBW_ENVIRONMENT: REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
+          CIBW_ENVIRONMENT: >
+            REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib &&
+            LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH &&
+            DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH delocate-listdeps {wheel} &&
             DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
@@ -101,13 +97,6 @@ jobs:
         run: |
           cmake --build . --parallel 
           cmake --install .
-
-      - name: Test
-        working-directory: ${{runner.workspace}}/build
-        shell: bash
-        # Execute tests defined by the CMake configuration.
-        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-        run: ctest --parallel 2 --timeout 300 --output-on-failure
 
       - name: Build wheels
         run: |
@@ -155,27 +144,22 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs -DFAST_BUILD=ON
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs -DFAST_BUILD=ON
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
         shell: bash
         # Execute the build.  You can specify a specific target with "--target <NAME>"
         run: |
-          cmake --build . --parallel 
-          cmake --install .
-
-      - name: Test
-        working-directory: ${{runner.workspace}}/build
-        shell: bash
-        # Execute tests defined by the CMake configuration.
-        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-        run: ctest --parallel 2 --timeout 300 --output-on-failure
+          cmake --build . --parallel --config RELEASE
+          cmake --install . --config --RELEASE
 
       - name: Build wheels
         run: |
           cd  $GITHUB_WORKSPACE/src/interfaces/highspy
-          export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
+          $Env:Path += [IO.Path]::PathSeparator + $pwd
+
+          export PATH=$PATH=${{runner.workspace}}/installs/highs/lib
           export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           export DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           ls $REPAIR_LIBRARY_PATH
@@ -196,7 +180,7 @@ jobs:
 
   build_sdist:
     name: Build source distribution
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -209,7 +193,7 @@ jobs:
 
   upload_pypi:
     needs: [build_wheels, build_sdist]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     # upload to PyPI on every tag starting with 'v'
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     # alternatively, to publish when a GitHub Release is created, use the following rule:

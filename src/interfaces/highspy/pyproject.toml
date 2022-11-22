@@ -52,4 +52,7 @@ build = "cp39-*"
 
 # Use delvewheel on windows
 before-build = "pip install delvewheel"
-repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"
+repair-wheel-command = [
+  "$Env:Path += [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH",
+  "delvewheel repair -w {dest_dir} {wheel}"
+]
