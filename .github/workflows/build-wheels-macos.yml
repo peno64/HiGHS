@@ -29,7 +29,10 @@ jobs:
         shell: bash
         working-directory: ${{runner.workspace}}/build
         run: |
-          cmake $GITHUB_WORKSPACE -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs -DFAST_BUILD=ON
+          cmake $GITHUB_WORKSPACE \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs \
+            -DFAST_BUILD=ON
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
