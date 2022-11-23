@@ -20,28 +20,31 @@ jobs:
         run: python -m pip install pybind11 pyomo
 
       - name: Create Build Environment
-        run: cmake -E make_directory ${{runner.workspace}}/build
+        run: cmake -E make_directory ${{runner.workspace}}\\build
 
       - name: Create install dir
-        run: cmake -E make_directory ${{runner.workspace}}/installs/
+        run: |
+          cmake -E make_directory ${{runner.workspace}}\\installs \
+          $Env:REPAIR_LIBRARY_PATH = ${{runner.workspace}}\\installs
+          
 
       - name: Configure CMake
         shell: bash
-        working-directory: ${{runner.workspace}}/build
+        working-directory: ${{runner.workspace}}\build
         run: |
           cmake $GITHUB_WORKSPACE \
             -DBUILD_SHARED_LIBS=ON \
-            -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs \
+            -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}\\installs\\highs \
             -DFAST_BUILD=ON \
-            -DCMAKE_BUILD_TYPE=Release 
+            -DCMAKE_BUILD_TYPE=RELEASE
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
         shell: bash
         # Execute the build.  You can specify a specific target with "--target <NAME>"
         run: |
-          cmake --build . --parallel --config Release
-          cmake --install . --config Release
+          cmake --build . --parallel --config RELEASE
+          cmake --install . --config RELEASE
 
         # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
       - name: Build wheels
