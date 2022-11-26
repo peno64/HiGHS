@@ -54,7 +54,7 @@ jobs:
           $Env:Path += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
           $Env:LIBPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
           $Env:PYTHONPATH += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
-          cd  $GITHUB_WORKSPACE/src/interfaces/highspy
+          cd  ${{runner.workspace}}/HiGHS/src/interfaces/highspy
           python -m cibuildwheel --output-dir wheelhouse
 
         # to supply options, put them in 'env', like:
