@@ -43,7 +43,7 @@ jobs:
           cmake --install .
 
       - name: Build wheels
-        working-directory: ${{runner.workspace}}/src/interfaces
+        working-directory: $GITHUB_WORKSPACE/src/interfaces
         run: |
           export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
           export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
