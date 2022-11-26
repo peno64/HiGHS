@@ -20,12 +20,12 @@ jobs:
         run: python -m pip install pybind11 pyomo
 
       - name: Create Build Environment
-        run: cmake -E make_directory ${{runner.workspace}}\\build
+        run: cmake -E make_directory ${{runner.workspace}}/build
 
       - name: Create install dir
         run: |
-          cmake -E make_directory ${{runner.workspace}}\\installs \
-          $Env:REPAIR_LIBRARY_PATH = ${{runner.workspace}}\\installs
+          cmake -E make_directory ${{runner.workspace}}/installs \
+          $Env:REPAIR_LIBRARY_PATH = ${{runner.workspace}}/installs
           
 
       - name: Configure CMake
