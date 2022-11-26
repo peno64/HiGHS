@@ -45,7 +45,7 @@ jobs:
         run: |
           cmake --build . --parallel --config RELEASE
           cmake --install . --config RELEASE
-          ls ${{runner.workspace}}
+          ls ${{runner.workspace}}/installs/highs/lib
          # cp ./lib/* ./bin
 
         # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
