@@ -30,7 +30,7 @@ jobs:
         run: |
           cmake $GITHUB_WORKSPACE \
             -DBUILD_SHARED_LIBS=ON \
-            -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/iwstalls/highs \
+            -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs \
             -DFAST_BUILD=ON \
             -DCMAKE_BUILD_TYPE=RELEASE
 
@@ -44,8 +44,8 @@ jobs:
 
         # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
       - name: Build wheels
+        working-directory: ${{runner.workspace}}/src/interfaces/highspy
         run: |
-          cd  $GITHUB_WORKSPACE/src/interfaces/highspy
           $Env:REPAIR_LIBRARY_PATH ="${{runner.workspace}}/installs/highs/lib"
           $Env:REPAIR_LIBRARY_PATH += [IO.Path]::PathSeparator + "${{runner.workspace}}/installs/highs/bin"
           $Env:Path += [IO.Path]::PathSeparator + $Env:REPAIR_LIBRARY_PATH
