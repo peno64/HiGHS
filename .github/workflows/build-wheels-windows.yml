@@ -46,7 +46,7 @@ jobs:
           cmake --build . --parallel --config RELEASE
           cmake --install . --config RELEASE
           dir ${{runner.workspace}}/installs/highs/lib
-        # cp ./lib/* ./bin
+          cp "${{runner.workspace}}/installs/highs/lib/*" ${{runner.workspace}}/installs/highs/bin
 
         # [IO.Path]::PathSeparator + $REPAIR_LIBRARY_PATH
       - name: Build wheels
