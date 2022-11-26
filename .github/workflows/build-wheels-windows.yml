@@ -25,9 +25,9 @@ jobs:
       - name: Create install dir
         working-directory: ${{runner.workspace}}
         run: |
-          cmake -E make_directory ${{runner.workspace}}/installs \
-          cd installs \ 
-          pwd \
+          cmake -E make_directory ${{runner.workspace}}/installs 
+          cd installs 
+          pwd 
           $Env:REPAIR_LIBRARY_PATH="${{runner.workspace}}/installs"
           
 
