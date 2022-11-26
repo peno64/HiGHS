@@ -33,6 +33,10 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs \
             -DFAST_BUILD=ON \
             -DCMAKE_BUILD_TYPE=RELEASE
+          cd $GITHUB_WORKSPACE
+          ls
+          cd ./src/interfaces
+          pwd 
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
