@@ -26,7 +26,9 @@ jobs:
         working-directory: ${{runner.workspace}}
         run: |
           cmake -E make_directory ${{runner.workspace}}/installs \
-          $Env:REPAIR_LIBRARY_PATH = ./installs
+          cd installs \ 
+          pwd \
+          $Env:REPAIR_LIBRARY_PATH="${{runner.workspace}}/installs"
           
 
       - name: Configure CMake
