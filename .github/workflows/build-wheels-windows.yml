@@ -21,8 +21,8 @@ jobs:
 
       - name: Create Build Environment
         run: |
-          cmake -E make_directory ${{runner.workspace}}/build
-          cmake -E make_directory ${{runner.workspace}}/installs 
+          cmake -E make_directory "${{runner.workspace}}\build"
+          cmake -E make_directory "${{runner.workspace}}\installs" 
 
       - name: Configure CMake
         shell: bash
@@ -30,12 +30,12 @@ jobs:
         run: |
           cmake $GITHUB_WORKSPACE \
             -DBUILD_SHARED_LIBS=ON \
-            -DCMAKE_INSTALL_PREFIX=${{runner.workspace}}/installs/highs \
+            -DCMAKE_INSTALL_PREFIX="${{runner.workspace}}\installs\highs" \
             -DFAST_BUILD=ON \
             -DCMAKE_BUILD_TYPE=RELEASE
           cd $GITHUB_WORKSPACE
           ls
-          cd ./src/interfaces
+          cd .\src\interfaces
           pwd 
 
       - name: Build
