@@ -518,15 +518,32 @@ message(STATUS "Build Python: ${BUILD_PYTHON_EXAMPLE}")
 CMAKE_DEPENDENT_OPTION(BUILD_CSHARP_EXAMPLE "Build CSharp example" ON "BUILD_EXAMPLES;CSHARP" OFF)
 message(STATUS "Build CSharp: ${BUILD_CSHARP_EXAMPLE}")
 
-# IF BUILD_DEPS=ON THEN Force all BUILD_*=ON
 CMAKE_DEPENDENT_OPTION(BUILD_ZLIB "Build the ZLIB dependency Library" OFF
   "NOT BUILD_DEPS" ON)
 message(STATUS "Build ZLIB: ${BUILD_ZLIB}")
 
 if(PYTHON)
-  CMAKE_DEPENDENT_OPTION(BUILD_pybind11 "Build the pybind11 dependency Library" OFF
-    "NOT BUILD_DEPS" ON)
-  message(STATUS "Python: Build pybind11: ${BUILD_pybind11}")
+  # pip install does not include pybind11Config.cmake
+  # conda install works according to https://github.com/pybind/pybind11/issues/1379
+  # not tested personally, use build dependency instead
+  # find_package(pybind11 REQUIRED)
+
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
+
+  message(CHECK_START "Fetching pybind11")
+  list(APPEND CMAKE_MESSAGE_INDENT "  ")
+  set(PYBIND11_INSTALL ON)
+  set(PYBIND11_TEST OFF)
+
+  include(FetchContent)
+  FetchContent_Declare(
+    pybind11
+    GIT_REPOSITORY "https://github.com/pybind/pybind11.git"
+    GIT_TAG "v2.10.2"
+  )
+  FetchContent_MakeAvailable(pybind11)
+  list(POP_BACK CMAKE_MESSAGE_INDENT)
+  message(CHECK_PASS "fetched")
 
   CMAKE_DEPENDENT_OPTION(BUILD_VENV "Create Python venv in BINARY_DIR/python/venv" OFF
     "NOT BUILD_TESTING" ON)
@@ -535,7 +552,7 @@ if(PYTHON)
   option(VENV_USE_SYSTEM_SITE_PACKAGES "Python venv can use system site packages" OFF)
   message(STATUS "Python: Allow venv to use system site packages: ${VENV_USE_SYSTEM_SITE_PACKAGES}")
 
-  option(FETCH_PYTHON_DEPS "Install python required modules if not available" ${BUILD_DEPS})
+  option(FETCH_PYTHON_DEPS "Install python required modules if not available" ON)
   message(STATUS "Python: Fetch dependencies: ${FETCH_PYTHON_DEPS}")
 endif()
 
