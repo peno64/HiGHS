@@ -2,7 +2,8 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2021 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
 /*                                                                       */
@@ -14,6 +15,7 @@
 #include "presolve/ICrash.h"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <iomanip>
@@ -242,7 +244,7 @@ void updateParameters(Quadratic& idata, const ICrashOptions& options,
   }
 }
 
-void solveSubproblemICA(Quadratic& idata, const ICrashOptions& options) {
+static void solveSubproblemICA(Quadratic& idata, const ICrashOptions& options) {
   bool minor_iteration_details = false;
 
   std::vector<double> residual_ica(idata.lp.num_row_, 0);
@@ -284,7 +286,7 @@ void solveSubproblemICA(Quadratic& idata, const ICrashOptions& options) {
   }
 }
 
-void solveSubproblemQP(Quadratic& idata, const ICrashOptions& options) {
+static void solveSubproblemQP(Quadratic& idata, const ICrashOptions& options) {
   bool minor_iteration_details = false;
 
   calculateRowValues(idata.lp, idata.xk);

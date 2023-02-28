@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file lp_data/HighsDebug.h
@@ -23,7 +21,7 @@
 #include "lp_data/HConst.h"
 #include "lp_data/HighsStatus.h"
 
-//#include "lp_data/HighsOptions.h"
+// #include "lp_data/HighsOptions.h"
 
 HighsStatus debugDebugToHighsStatus(const HighsDebugStatus debug_status);
 

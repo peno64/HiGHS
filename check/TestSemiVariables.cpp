@@ -170,7 +170,8 @@ TEST_CASE("semi-variable-upper-bound", "[highs_test_semi_variables]") {
   double coeff = 1e6;
   std::vector<HighsInt> index = {0, 1};
   std::vector<double> value = {-1, coeff};
-  REQUIRE(highs.addRow(0, 0, 2, &index[0], &value[0]) == HighsStatus::kOk);
+  REQUIRE(highs.addRow(0, 0, 2, index.data(), value.data()) ==
+          HighsStatus::kOk);
   // Problem is no longer unbounded due to equation linking the
   // semi-variable to the continuous variable. However, optimal value
   // of semi-variable should be 1e6, so it is active at the modified upper
@@ -204,11 +205,13 @@ TEST_CASE("semi-variable-file", "[highs_test_semi_variables]") {
   // Solve the same semi-continuous model from MPS and .lp files
   model = "semi-continuous";
   optimal_objective_function_value = 8.22333;
+  if (dev_run) printf("\nSolving %s model from MPS file\n", model.c_str());
   model_file = std::string(HIGHS_DIR) + "/check/instances/" + model + ".mps";
   REQUIRE(highs.readModel(model_file) == HighsStatus::kOk);
   REQUIRE(highs.run() == HighsStatus::kOk);
   REQUIRE(fabs(info.objective_function_value -
                optimal_objective_function_value) < double_equal_tolerance);
+  if (dev_run) printf("\nSolving %s model from LP file\n", model.c_str());
   model_file = std::string(HIGHS_DIR) + "/check/instances/" + model + ".lp";
   REQUIRE(highs.readModel(model_file) == HighsStatus::kOk);
   REQUIRE(highs.run() == HighsStatus::kOk);
@@ -217,11 +220,13 @@ TEST_CASE("semi-variable-file", "[highs_test_semi_variables]") {
   // Solve the same semi-integer model from MPS and .lp files
   model = "semi-integer";
   optimal_objective_function_value = 8.13333;
+  if (dev_run) printf("\nSolving %s model from MPS file\n", model.c_str());
   model_file = std::string(HIGHS_DIR) + "/check/instances/" + model + ".mps";
   REQUIRE(highs.readModel(model_file) == HighsStatus::kOk);
   REQUIRE(highs.run() == HighsStatus::kOk);
   REQUIRE(fabs(info.objective_function_value -
                optimal_objective_function_value) < double_equal_tolerance);
+  if (dev_run) printf("\nSolving %s model from LP file\n", model.c_str());
   model_file = std::string(HIGHS_DIR) + "/check/instances/" + model + ".lp";
   REQUIRE(highs.readModel(model_file) == HighsStatus::kOk);
   REQUIRE(highs.run() == HighsStatus::kOk);

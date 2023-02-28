@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "mip/HighsSearch.h"
@@ -850,7 +848,7 @@ void HighsSearch::openNodesToQueue(HighsNodeQueue& nodequeue) {
 
   lp->flushDomain(localdom);
   if (basis) {
-    if (basis->row_status.size() == lp->numRows())
+    if ((HighsInt)basis->row_status.size() == lp->numRows())
       lp->setStoredBasis(std::move(basis));
     lp->recoverBasis();
   }
@@ -1911,7 +1909,8 @@ bool HighsSearch::backtrackUntilDepth(HighsInt targetDepth) {
   lp->flushDomain(localdom);
   nodestack.back().domgchgStackPos = domchgPos;
   if (nodestack.back().nodeBasis &&
-      nodestack.back().nodeBasis->row_status.size() == lp->getLp().num_row_)
+      (HighsInt)nodestack.back().nodeBasis->row_status.size() ==
+          lp->getLp().num_row_)
     lp->setStoredBasis(nodestack.back().nodeBasis);
   lp->recoverBasis();
 

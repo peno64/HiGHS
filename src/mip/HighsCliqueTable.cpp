@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "mip/HighsCliqueTable.h"
@@ -1726,7 +1724,7 @@ void HighsCliqueTable::separateCliques(const HighsMipSolver& mipsolver,
   std::vector<double> vals;
   for (std::vector<CliqueVar>& clique : data.cliques) {
 #ifdef ADD_ZERO_WEIGHT_VARS
-    auto extensionend = data.Z.size();
+    HighsInt extensionend = (HighsInt)data.Z.size();
     for (CliqueVar v : clique) {
       extensionend = partitionNeighborhood(data.neighborhoodInds,
                                            data.numNeighborhoodQueries, v,
@@ -2152,7 +2150,7 @@ void HighsCliqueTable::runCliqueMerging(HighsDomain& globaldomain) {
         HighsInt hits = cliquehits[cliqueid];
         cliquehits[cliqueid] = 0;
 
-        if (hits == extensionvars.size()) {
+        if (hits == (HighsInt)extensionvars.size()) {
           redundant = true;
           if (cliques[cliqueid].origin != kHighsIInf &&
               cliques[cliqueid].origin != -1)

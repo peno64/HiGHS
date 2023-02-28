@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file lp_data/HighsModelUtils.h
@@ -16,14 +14,14 @@
 #ifndef LP_DATA_HIGHSMODELUTILS_H_
 #define LP_DATA_HIGHSMODELUTILS_H_
 
-//#include "Highs.h"
-//#include "lp_data/HighsStatus.h"
+// #include "Highs.h"
+// #include "lp_data/HighsStatus.h"
 #include "lp_data/HighsInfo.h"
 #include "model/HighsModel.h"
-//#include "lp_data/HStruct.h"
-//#include "lp_data/HighsInfo.h"
-//#include "lp_data/HighsLp.h"
-//#include "lp_data/HighsOptions.h"
+// #include "lp_data/HStruct.h"
+// #include "lp_data/HighsInfo.h"
+// #include "lp_data/HighsLp.h"
+// #include "lp_data/HighsOptions.h"
 
 // Analyse lower and upper bounds of a model
 void analyseModelBounds(const HighsLogOptions& log_options, const char* message,
@@ -41,7 +39,8 @@ void writeModelBoundSolution(
     const std::vector<HighsBasisStatus>& status,
     const HighsVarType* integrality = NULL);
 void writeModelSolution(FILE* file, const HighsLp& lp,
-                        const HighsSolution& solution, const HighsInfo& info);
+                        const HighsSolution& solution, const HighsInfo& info,
+                        const bool sparse);
 
 HighsInt maxNameLength(const HighsInt num_name,
                        const std::vector<std::string>& names);
@@ -91,5 +90,7 @@ std::string typeToString(const HighsVarType type);
 
 std::string findModelObjectiveName(const HighsLp* lp,
                                    const HighsHessian* hessian = nullptr);
+
+bool repeatedNames(const std::vector<std::string> name);
 
 #endif

@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #ifndef HIGHS_UTIL_HASH_TREE_H_
@@ -338,6 +336,8 @@ class HighsHashTree {
           // is estimated above the threshold to merge when the parent checks
           // its children after deletion
           return kBranchFactor;
+        default:
+          throw std::logic_error("Unexpected type in hash tree");
       }
     }
 
@@ -360,6 +360,8 @@ class HighsHashTree {
           // is estimated above the threshold to merge when the parent checks
           // its children after deletion
           return kBranchFactor;
+        default:
+          throw std::logic_error("Unexpected type in hash tree");
       }
     }
 
@@ -487,6 +489,9 @@ class HighsHashTree {
       case kInnerLeafSizeClass4:
         mergeIntoLeaf(leaf, mergeNode.getInnerLeafSizeClass4(), hashPos);
         delete mergeNode.getInnerLeafSizeClass4();
+        break;
+      default:
+        break;
     }
   }
 
@@ -577,7 +582,10 @@ class HighsHashTree {
             ++i;
           } while (i < leaf->size && get_first_chunk16(leaf->hashes[i]) == pos);
         }
+        break;
       }
+      default:
+        break;
     }
 
     return nullptr;
@@ -882,6 +890,9 @@ class HighsHashTree {
                   branch->child[pos].getInnerLeafSizeClass4()->insert_entry(
                       compute_hash(leaf->entries[i].key()), hashPos + 1,
                       leaf->entries[i]);
+                  break;
+                default:
+                  break;
               }
             }
           }
@@ -1137,11 +1148,15 @@ class HighsHashTree {
 
         return nullptr;
       }
+      default:
+        throw std::logic_error("Unexpected type in hash tree");
     }
   }
 
   static void destroy_recurse(NodePtr node) {
     switch (node.getType()) {
+      case kEmpty:
+        break;
       case kListLeaf: {
         ListLeaf* leaf = node.getListLeaf();
         ListNode* iter = leaf->first.next;
@@ -1149,7 +1164,7 @@ class HighsHashTree {
         while (iter != nullptr) {
           ListNode* next = iter->next;
           delete iter;
-          iter = iter->next;
+          iter = next;
         }
 
         break;
@@ -1180,8 +1195,7 @@ class HighsHashTree {
   static NodePtr copy_recurse(NodePtr node) {
     switch (node.getType()) {
       case kEmpty:
-        assert(false);
-        break;
+        throw std::logic_error("Unexpected node type in empty in hash tree");
       case kListLeaf: {
         ListLeaf* leaf = node.getListLeaf();
 
@@ -1224,6 +1238,8 @@ class HighsHashTree {
 
         return newBranch;
       }
+      default:
+        throw std::logic_error("Unexpected type in hash tree");
     }
   }
 

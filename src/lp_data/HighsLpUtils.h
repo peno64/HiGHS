@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file lp_data/HighsLpUtils.h
@@ -202,9 +200,29 @@ HighsStatus readSolutionFile(const std::string filename,
                              HighsBasis& basis, HighsSolution& solution,
                              const HighsInt style);
 
-void checkLpSolutionFeasibility(const HighsOptions& options, const HighsLp& lp,
-                                const HighsSolution& solution);
+HighsStatus readSolutionFileErrorReturn(std::ifstream& in_file);
+HighsStatus readSolutionFileReturn(const HighsStatus status,
+                                   HighsSolution& solution, HighsBasis& basis,
+                                   const HighsSolution& read_solution,
+                                   const HighsBasis& read_basis,
+                                   std::ifstream& in_file);
+bool readSolutionFileIgnoreLineOk(std::ifstream& in_file);
+bool readSolutionFileKeywordLineOk(std::string& keyword,
+                                   std::ifstream& in_file);
+bool readSolutionFileHashKeywordIntLineOk(std::string& keyword, HighsInt& value,
+                                          std::ifstream& in_file);
+bool readSolutionFileIdDoubleLineOk(double& value, std::ifstream& in_file);
+bool readSolutionFileIdDoubleIntLineOk(double& value, HighsInt& index,
+                                       std::ifstream& in_file);
 
+HighsStatus assessLpPrimalSolution(const HighsOptions& options,
+                                   const HighsLp& lp,
+                                   const HighsSolution& solution, bool& valid,
+                                   bool& integral, bool& feasible);
+
+HighsStatus calculateRowValues(const HighsLp& lp,
+                               const std::vector<double>& col_value,
+                               std::vector<double>& row_value);
 HighsStatus calculateRowValues(const HighsLp& lp, HighsSolution& solution);
 HighsStatus calculateRowValuesQuad(const HighsLp& lp, HighsSolution& solution);
 HighsStatus calculateColDuals(const HighsLp& lp, HighsSolution& solution);

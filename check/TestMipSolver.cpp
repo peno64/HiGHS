@@ -24,6 +24,39 @@ TEST_CASE("MIP-rowless", "[highs_test_mip_solver]") {
   rowlessMIP(highs);
 }
 
+TEST_CASE("MIP-solution-limit", "[highs_test_mip_solver]") {
+  std::string filename;
+  filename = std::string(HIGHS_DIR) + "/check/instances/rgn.mps";
+
+  Highs highs;
+  if (!dev_run) highs.setOptionValue("output_flag", false);
+  highs.readModel(filename);
+
+  highs.setOptionValue("presolve", kHighsOffString);
+  if (dev_run) highs.setOptionValue("log_dev_level", 1);
+
+  // Test for kSolutionLimit with mip_max_nodes
+  highs.setOptionValue("mip_max_nodes", 0);
+  highs.run();
+  REQUIRE(highs.getModelStatus() == HighsModelStatus::kSolutionLimit);
+  highs.setOptionValue("mip_max_nodes", kHighsIInf);
+  highs.clearSolver();
+
+  // Test for kSolutionLimit with mip_max_leaves
+  highs.setOptionValue("mip_max_leaves", 0);
+  highs.run();
+  REQUIRE(highs.getModelStatus() == HighsModelStatus::kSolutionLimit);
+  highs.setOptionValue("mip_max_leaves", kHighsIInf);
+  highs.clearSolver();
+
+  // Test for kSolutionLimit with mip_max_improving_sols
+  highs.setOptionValue("mip_max_improving_sols", 1);
+  highs.run();
+  REQUIRE(highs.getModelStatus() == HighsModelStatus::kSolutionLimit);
+  highs.setOptionValue("mip_max_improving_sols", kHighsIInf);
+  highs.clearSolver();
+}
+
 TEST_CASE("MIP-integrality", "[highs_test_mip_solver]") {
   std::string filename;
   filename = std::string(HIGHS_DIR) + "/check/instances/avgas.mps";
@@ -56,9 +89,9 @@ TEST_CASE("MIP-integrality", "[highs_test_mip_solver]") {
     mask[iCol] = 1;
     integrality[ix] = HighsVarType::kInteger;
   }
-  REQUIRE(highs.changeColsIntegrality(from_col0, to_col0, &integrality[0]) ==
+  REQUIRE(highs.changeColsIntegrality(from_col0, to_col0, integrality.data()) ==
           HighsStatus::kOk);
-  REQUIRE(highs.changeColsIntegrality(from_col1, to_col1, &integrality[0]) ==
+  REQUIRE(highs.changeColsIntegrality(from_col1, to_col1, integrality.data()) ==
           HighsStatus::kOk);
   if (dev_run) {
     highs.setOptionValue("log_dev_level", 3);
@@ -89,8 +122,8 @@ TEST_CASE("MIP-integrality", "[highs_test_mip_solver]") {
   highs.clearModel();
   if (!dev_run) highs.setOptionValue("output_flag", false);
   highs.readModel(filename);
-  REQUIRE(highs.changeColsIntegrality(num_set_entries, &set[0],
-                                      &integrality[0]) == HighsStatus::kOk);
+  REQUIRE(highs.changeColsIntegrality(num_set_entries, set.data(),
+                                      integrality.data()) == HighsStatus::kOk);
   if (dev_run) highs.writeModel("");
   highs.run();
   if (dev_run) highs.writeSolution("", kSolutionStylePretty);
@@ -105,7 +138,7 @@ TEST_CASE("MIP-integrality", "[highs_test_mip_solver]") {
   highs.clearModel();
   if (!dev_run) highs.setOptionValue("output_flag", false);
   highs.readModel(filename);
-  REQUIRE(highs.changeColsIntegrality(&mask[0], &integrality[0]) ==
+  REQUIRE(highs.changeColsIntegrality(mask.data(), integrality.data()) ==
           HighsStatus::kOk);
   if (dev_run) highs.writeModel("");
   highs.run();
@@ -453,6 +486,8 @@ TEST_CASE("MIP-infeasible-start", "[highs_test_mip_solver]") {
   highs.run();
   REQUIRE(model_status == HighsModelStatus::kInfeasible);
 }
+
+TEST_CASE("get-integrality", "[highs_test_mip_solver]") {}
 
 bool objectiveOk(const double optimal_objective,
                  const double require_optimal_objective,

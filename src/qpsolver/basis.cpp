@@ -9,7 +9,7 @@ Basis::Basis(Runtime& rt, std::vector<HighsInt> active,
       buffer_column_aq(rt.instance.num_var),
       buffer_row_ep(rt.instance.num_var) {
   buffer_vec2hvec.setup(rt.instance.num_var);
-  for (HighsInt i = 0; i < active.size(); i++) {
+  for (size_t i = 0; i < active.size(); i++) {
     activeconstraintidx.push_back(active[i]);
     basisstatus[activeconstraintidx[i]] = lower[i];
   }
@@ -34,7 +34,7 @@ void Basis::build() {
   basisfactor = HFactor();
 
   constraintindexinbasisfactor.assign(Atran.num_row + Atran.num_col, -1);
-  assert(nonactiveconstraintsidx.size() + activeconstraintidx.size() ==
+  assert((HighsInt)(nonactiveconstraintsidx.size() + activeconstraintidx.size()) ==
          Atran.num_row);
 
   HighsInt counter = 0;
@@ -55,9 +55,9 @@ void Basis::build() {
     Atran.index.resize(1);
     Atran.value.resize(1);
   }
-  basisfactor.setup(Atran.num_col, Atran.num_row, (HighsInt*)&Atran.start[0],
-                    (HighsInt*)&Atran.index[0], (const double*)&Atran.value[0],
-                    (HighsInt*)&baseindex[0]);
+  basisfactor.setup(Atran.num_col, Atran.num_row, Atran.start.data(),
+                    Atran.index.data(), Atran.value.data(),
+                    baseindex.data());
   basisfactor.build();
 
   for (size_t i = 0;
@@ -71,7 +71,7 @@ void Basis::rebuild() {
   constraintindexinbasisfactor.clear();
 
   constraintindexinbasisfactor.assign(Atran.num_row + Atran.num_col, -1);
-  assert(nonactiveconstraintsidx.size() + activeconstraintidx.size() ==
+  assert((HighsInt)(nonactiveconstraintsidx.size() + activeconstraintidx.size()) ==
          Atran.num_row);
 
   basisfactor.build();
@@ -232,7 +232,7 @@ Vector Basis::ftran(const Vector& rhs, bool buffer, HighsInt q) {
 }
 
 Vector Basis::recomputex(const Instance& inst) {
-  assert(activeconstraintidx.size() == inst.num_var);
+  assert((HighsInt)activeconstraintidx.size() == inst.num_var);
   Vector rhs(inst.num_var);
 
   for (HighsInt i = 0; i < inst.num_var; i++) {
@@ -271,7 +271,7 @@ Vector& Basis::Ztprod(const Vector& rhs, Vector& target, bool buffer,
   Vector res_ = ftran(rhs, buffer, q);
 
   target.reset();
-  for (HighsInt i = 0; i < nonactiveconstraintsidx.size(); i++) {
+  for (HighsInt i = 0; i < (HighsInt)nonactiveconstraintsidx.size(); i++) {
     HighsInt nonactive = nonactiveconstraintsidx[i];
     HighsInt idx = constraintindexinbasisfactor[nonactive];
     target.index[i] = i;

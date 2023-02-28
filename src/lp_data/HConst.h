@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file lp_data/HConst.h
@@ -22,6 +20,9 @@
 
 #include "util/HighsInt.h"
 
+const std::string kHighsCopyrightStatement =
+    "Copyright (c) 2023 HiGHS under MIT licence terms";
+
 const HighsInt kHighsIInf = std::numeric_limits<HighsInt>::max();
 const double kHighsInf = std::numeric_limits<double>::infinity();
 const double kHighsTiny = 1e-14;
@@ -30,9 +31,11 @@ const double kHighsZero = 1e-50;
 const std::string kHighsOffString = "off";
 const std::string kHighsChooseString = "choose";
 const std::string kHighsOnString = "on";
+const HighsInt kHighsMaxStringLength = 512;
 const HighsInt kSimplexConcurrencyLimit = 8;
 const double kRunningAverageMultiplier = 0.05;
 
+const bool kAllowDeveloperAssert = false;
 const bool kExtendInvertWhenAddingRows = false;
 
 enum SimplexScaleStrategy {
@@ -127,8 +130,9 @@ enum SolutionStyle {
   kSolutionStylePretty,        // 1;
   kSolutionStyleGlpsolRaw,     // 2;
   kSolutionStyleGlpsolPretty,  // 3;
+  kSolutionStyleSparse,        // 4;
   kSolutionStyleMin = kSolutionStyleOldRaw,
-  kSolutionStyleMax = kSolutionStyleGlpsolPretty
+  kSolutionStyleMax = kSolutionStyleSparse
 };
 
 enum GlpsolCostRowLocation {
@@ -174,9 +178,12 @@ enum class HighsModelStatus {
   kObjectiveTarget,
   kTimeLimit,
   kIterationLimit,
+  // V2.0: flip kUnknown and kSolutionLimit - and then modify kMax and
+  // highs_c_api.h, highs_csharp_api.cs, highspy/highs_bindings.cpp
   kUnknown,
+  kSolutionLimit,
   kMin = kNotset,
-  kMax = kUnknown
+  kMax = kSolutionLimit
 };
 
 /** SCIP/CPLEX-like HiGHS basis status for columns and rows. */

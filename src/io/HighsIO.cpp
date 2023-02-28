@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file io/HighsIO.cpp
@@ -27,8 +25,8 @@ void highsLogHeader(const HighsLogOptions& log_options) {
                "Running HiGHS %d.%d.%d [date: %s, git hash: %s]\n",
                (int)HIGHS_VERSION_MAJOR, (int)HIGHS_VERSION_MINOR,
                (int)HIGHS_VERSION_PATCH, HIGHS_COMPILATION_DATE, HIGHS_GITHASH);
-  highsLogUser(log_options, HighsLogType::kInfo,
-               "Copyright (c) 2022 ERGO-Code under MIT licence terms\n");
+  highsLogUser(log_options, HighsLogType::kInfo, "%s\n",
+               kHighsCopyrightStatement.c_str());
 }
 
 std::array<char, 32> highsDoubleToString(const double val,

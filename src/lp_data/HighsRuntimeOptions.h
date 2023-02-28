@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -20,7 +18,8 @@
 #include "util/stringutil.h"
 
 bool loadOptions(const HighsLogOptions& report_log_options, int argc,
-                 char** argv, HighsOptions& options, std::string& model_file) {
+                 char** argv, HighsOptions& options, std::string& model_file,
+                 std::string& read_solution_file) {
   try {
     cxxopts::Options cxx_options(argv[0], "HiGHS options");
     cxx_options.positional_help("[file]").show_positional_help();
@@ -31,6 +30,9 @@ bool loadOptions(const HighsLogOptions& report_log_options, int argc,
         //
         // model file
         (kModelFileString, "File of model to solve.",
+         cxxopts::value<std::vector<std::string>>())
+        // read_solution file
+        (kReadSolutionFileString, "File of solution to read.",
          cxxopts::value<std::vector<std::string>>())
         // options file
         (kOptionsFileString, "File containing HiGHS options.",
@@ -71,7 +73,9 @@ bool loadOptions(const HighsLogOptions& report_log_options, int argc,
          cxxopts::value<HighsInt>())
         // ranging option
         (kRangingString, "Compute cost, bound, RHS and basic solution ranging.",
-         cxxopts::value<std::string>())("h, help", "Print help.");
+         cxxopts::value<std::string>())
+        // version
+        (kVersionString, "Print version.")("h, help", "Print help.");
 
     // Handle command line file specifications
     //
@@ -82,6 +86,13 @@ bool loadOptions(const HighsLogOptions& report_log_options, int argc,
 
     if (result.count("help")) {
       std::cout << cxx_options.help({""}) << std::endl;
+      exit(0);
+    }
+    if (result.count("version")) {
+      std::cout << "HiGHS version " << HIGHS_VERSION_MAJOR << "."
+                << HIGHS_VERSION_MINOR << "." << HIGHS_VERSION_PATCH
+                << std::endl;
+      std::cout << kHighsCopyrightStatement << std::endl;
       exit(0);
     }
     if (result.count(kModelFileString)) {
@@ -101,6 +112,26 @@ bool loadOptions(const HighsLogOptions& report_log_options, int argc,
         }
       } else {
         model_file = v[0];
+      }
+    }
+    read_solution_file = "";
+    if (result.count(kReadSolutionFileString)) {
+      auto& v = result[kReadSolutionFileString].as<std::vector<std::string>>();
+      if (v.size() > 1) {
+        HighsInt nonEmpty = 0;
+        for (HighsInt i = 0; i < (HighsInt)v.size(); i++) {
+          std::string arg = v[i];
+          if (trim(arg).size() > 0) {
+            nonEmpty++;
+            read_solution_file = arg;
+          }
+        }
+        if (nonEmpty > 1) {
+          std::cout << "Multiple files not implemented.\n";
+          return false;
+        }
+      } else {
+        read_solution_file = v[0];
       }
     }
     // options file
