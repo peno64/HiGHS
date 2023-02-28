@@ -15,7 +15,8 @@ skip = ""
 test-skip = ""
 
 [tool.cibuildwheel.linux]
-archs = ["x86_64 i686 aarch64 ppc64le s390x"]
+#archs = ["x86_64 i686 aarch64 ppc64le s390x"]
+archs = ["x86_64 i686 aarch64 s390x"]
 
 before-all = [
   "cd /project && ls /host/home/ivet",
