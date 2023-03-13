@@ -1,4 +1,4 @@
-name: wheels-linux
+name: python-wheels-linux
 
 on: [push, pull_request]
 
