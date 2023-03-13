@@ -79,7 +79,7 @@ with the optional setting of `--prefix <prefix>  = The installation prefix CMAKE
 Interfaces 
 ----------
 
-There are HiGHS interfaces for C, C#, FORTRAN, and Python in [HiGHS/src/interfaces](https://github.com/ERGO-Code/HiGHS/blob/master/src/interfaces), with example driver files in [HiGHS/examples](https://github.com/ERGO-Code/HiGHS/blob/master/examples). More on language and modelling interfaces can be found at https://ergo-code.github.io/HiGHS/interfaces.html.
+There are HiGHS interfaces for C, C#, FORTRAN, and Python in [HiGHS/highs/interfaces](https://github.com/ERGO-Code/HiGHS/blob/master/highs/interfaces), with example driver files in [HiGHS/examples](https://github.com/ERGO-Code/HiGHS/blob/master/examples). More on language and modelling interfaces can be found at https://ergo-code.github.io/HiGHS/interfaces.html.
 
 We are happy to give a reasonable level of support via email sent to highsopt@gmail.com.
 
@@ -118,7 +118,7 @@ library as described above, ensure the shared library is in the
 
     pip install ./
 
-from `src/interfaces/highspy` (there should be a `setup.py` file there).
+from `highs/python` (there should be a `setup.py` file there).
 
 You may also require
 

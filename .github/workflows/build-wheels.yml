@@ -40,8 +40,12 @@ jobs:
 
       - name: Build wheels
         run: |
-          cd  $GITHUB_WORKSPACE/src/interfaces/highspy
-          python -m cibuildwheel --output-dir wheelhouse
+          cd  $GITHUB_WORKSPACE
+          export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
+          export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
+          export DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
+          ls $REPAIR_LIBRARY_PATH
+          python -m cibuildwheel --output-dir wheelhouse /highs/python
 
         # export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
         # export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
