@@ -8,11 +8,11 @@
 /*    Available as open-source under the MIT License                     */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/**@file test/DevKkt.h
+/**@file presolve/DevKkt.h
  * @brief
  */
-#ifndef TEST_DEV_KKT_H_
-#define TEST_DEV_KKT_H_
+#ifndef PRESOLVE_DEV_KKT_H_
+#define PRESOLVE_DEV_KKT_H_
 
 #include <map>
 #include <vector>

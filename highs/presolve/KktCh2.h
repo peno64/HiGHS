@@ -11,8 +11,8 @@
 /**@file test/KktChStep.h
  * @brief
  */
-#ifndef TEST_KKTCH2_H_
-#define TEST_KKTCH2_H_
+#ifndef PRESOLVE_KKTCH2_H_
+#define PRESOLVE_KKTCH2_H_
 
 #include <cmath>
 #include <fstream>
@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "lp_data/HConst.h"
-#include "test/DevKkt.h"
+#include "presolve/DevKkt.h"
 #include "util/HighsInt.h"
 
 namespace presolve {
