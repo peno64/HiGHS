@@ -380,7 +380,7 @@ export(TARGETS libhighs
 # Either list all the src/* directories here, or put explicit paths in all the
 # include statements.
 # M reckons that the latter is more transparent, and I'm inclined to agree.
-set(CONF_INCLUDE_DIRS "${HIGHS_SOURCE_DIR}/src" "${HIGHS_BINARY_DIR}")
+set(CONF_INCLUDE_DIRS "${HIGHS_SOURCE_DIR}/highs" "${HIGHS_BINARY_DIR}")
 configure_file(${HIGHS_SOURCE_DIR}/highs-config.cmake.in
     "${HIGHS_BINARY_DIR}/highs-config.cmake" @ONLY)
 
@@ -738,7 +738,7 @@ endif()
     # Either list all the src/* directories here, or put explicit paths in all the
     # include statements.
     # M reckons that the latter is more transparent, and I'm inclined to agree.
-    set(CONF_INCLUDE_DIRS "${HIGHS_SOURCE_DIR}/src" "${HIGHS_BINARY_DIR}")
+    set(CONF_INCLUDE_DIRS "${HIGHS_SOURCE_DIR}/highs" "${HIGHS_BINARY_DIR}")
     configure_file(${HIGHS_SOURCE_DIR}/highs-config.cmake.in
         "${HIGHS_BINARY_DIR}/highs-config.cmake" @ONLY)
 
