@@ -1,4 +1,4 @@
-name: python-wheels-macos
+name: build-wheels-macos
 
 on: [push, pull_request]
 

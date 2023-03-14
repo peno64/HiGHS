@@ -1,4 +1,4 @@
-name: wheels-linux
+name: build-wheels-linux
 
 on: [push, pull_request]
 
@@ -45,8 +45,7 @@ jobs:
           export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
           export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           export DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
-          cd  $GITHUB_WORKSPACE/src/interfaces/highspy
-          python -m cibuildwheel --output-dir wheelhouse highs/python
+          python -m cibuildwheel --output-dir wheelhouse ./highs/python
         # ls $REPAIR_LIBRARY_PATH
         # to supply options, put them in 'env', like:
 
