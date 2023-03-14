@@ -42,18 +42,11 @@ jobs:
       - name: Build wheels
         run: |
           cd  $GITHUB_WORKSPACE
-          export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
-          export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
-          export DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           python -m cibuildwheel --output-dir wheelhouse ./highs/python
-        # ls $REPAIR_LIBRARY_PATH
-        # to supply options, put them in 'env', like:
 
-        env:
-          CIBW_ENVIRONMENT: >
-            REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib &&
-            LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH &&
-            DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
+        # to supply options, put them in 'env', like:
+        # env:
+        #   CIBW_ENVIRONMENT: REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib 
 
       - uses: actions/upload-artifact@v2
         with:

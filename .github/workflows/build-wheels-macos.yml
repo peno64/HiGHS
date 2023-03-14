@@ -45,7 +45,7 @@ jobs:
           export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           export DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           ls $REPAIR_LIBRARY_PATH
-          python -m cibuildwheel --output-dir wheelhouse /highs/python
+          python -m cibuildwheel --output-dir wheelhouse ./highs/python
 
         # export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
         # export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
@@ -54,10 +54,7 @@ jobs:
         # to supply options, put them in 'env', like:
 
         env:
-          CIBW_ENVIRONMENT: >
-            REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib &&
-            LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH &&
-            DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
+          CIBW_ENVIRONMENT: REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib 
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH delocate-listdeps {wheel} &&
             DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
