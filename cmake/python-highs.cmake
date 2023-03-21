@@ -8,17 +8,9 @@ if(NOT TARGET ${PROJECT_NAMESPACE}::highs)
   message(FATAL_ERROR "Python: missing highs TARGET")
 endif()
 
-if(UNIX AND NOT APPLE)
-  if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-    list(APPEND CMAKE_SWIG_FLAGS "-DSWIGWORDSIZE64")
-  else()
-    list(APPEND CMAKE_SWIG_FLAGS "-DSWIGWORDSIZE32")
-  endif()
-endif()
 
 # Find Python
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
-list(APPEND CMAKE_SWIG_FLAGS "-py3" "-DPY3")
 
 # Find if the python module is available,
 # otherwise install it (PACKAGE_NAME) to the Python3 user install directory.
@@ -148,31 +140,30 @@ endif()
 ##  PYTHON WRAPPERS  ##
 #######################
 
-set(PYTHON_PROJECT ${PROJECT_NAME})
+set(PYTHON_PROJECT highspy)
 message(STATUS "Python project: ${PYTHON_PROJECT}")
-set(PYTHON_PROJECT_DIR ${PROJECT_BINARY_DIR}/python/${PYTHON_PROJECT})
-message(STATUS "Python project build path: ${PYTHON_PROJECT_DIR}")
+set(PYTHON_PROJECT_DIR ${PROJECT_BINARY_DIR}/python/)
+message(STATUS "Python project build path: ${PYTHON_PROJECT_DIR}/highspy")
 
 add_subdirectory(${HIGHS_SOURCE_DIR}/src/interfaces/highspy)
 
 #######################
 ## Python Packaging  ##
 #######################
-#file(MAKE_DIRECTORY python/${PYTHON_PROJECT})
-file(GENERATE OUTPUT ${PYTHON_PROJECT_DIR}/__init__.py CONTENT "__version__ = \"${PROJECT_VERSION}\"\n")
-# file(GENERATE OUTPUT ${PYTHON_PROJECT_DIR}/highs/__init__.py CONTENT "")
+file(MAKE_DIRECTORY ${PYTHON_PROJECT_DIR}/python/highspy)
+# file(GENERATE OUTPUT ${PYTHON_PROJECT_DIR}/__init__.py CONTENT "__version__ = \"${PROJECT_VERSION}\"\n")
 
 file(COPY
   src/interfaces/highspy/highspy/__init__.py
-  DESTINATION ${PYTHON_PROJECT_DIR}/highs)
+  DESTINATION ${PYTHON_PROJECT_DIR})
 
 file(COPY
   src/interfaces/highspy/highspy/highs.py
-  DESTINATION ${PYTHON_PROJECT_DIR}/highs)
+  DESTINATION ${PYTHON_PROJECT_DIR})
 
 file(COPY
   src/interfaces/highspy/setup.py
-  DESTINATION ${PROJECT_BINARY_DIR}/python)
+  DESTINATION ${PYTHON_PROJECT_DIR})
 
 # configure_file(
 #   ${PROJECT_SOURCE_DIR}/ortools/python/README.pypi.txt
@@ -187,86 +178,62 @@ search_python_module(
   NAME wheel
   PACKAGE wheel)
 
-# add_custom_command(
-#   OUTPUT python/dist/timestamp
-#   COMMAND ${CMAKE_COMMAND} -E remove_directory dist
-#   COMMAND ${CMAKE_COMMAND} -E make_directory ${PYTHON_PROJECT}/.libs
-#   # Don't need to copy static lib on Windows.
-#   COMMAND ${CMAKE_COMMAND} -E $<IF:$<STREQUAL:$<TARGET_PROPERTY:ortools,TYPE>,SHARED_LIBRARY>,copy,true>
-#   $<$<STREQUAL:$<TARGET_PROPERTY:ortools,TYPE>,SHARED_LIBRARY>:$<TARGET_SONAME_FILE:ortools>>
-#   ${PYTHON_PROJECT}/.libs
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywrapinit> ${PYTHON_PROJECT}/init
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywrapknapsack_solver> ${PYTHON_PROJECT}/algorithms
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:linear_sum_assignment_pybind11> ${PYTHON_PROJECT}/graph/python
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:max_flow_pybind11> ${PYTHON_PROJECT}/graph/python
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:min_cost_flow_pybind11> ${PYTHON_PROJECT}/graph/python
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywrapcp> ${PYTHON_PROJECT}/constraint_solver
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywraplp> ${PYTHON_PROJECT}/linear_solver
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:highs-py> ${PYTHON_PROJECT}/linear_solver/python
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:swig_helper> ${PYTHON_PROJECT}/sat/python
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pywraprcpsp> ${PYTHON_PROJECT}/scheduling
-#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:sorted_interval_list> ${PYTHON_PROJECT}/util/python
-#   #COMMAND ${Python3_EXECUTABLE} setup.py bdist_egg bdist_wheel
-#   COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel
-#   COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/python/dist/timestamp
-#   MAIN_DEPENDENCY
-#     ortools/python/setup.py.in
-#   DEPENDS
-#     python/setup.py
-#     Py${PROJECT_NAME}_proto
-#     ${PROJECT_NAMESPACE}::ortools
-#     pywrapinit
-#     pywrapknapsack_solver
-#     linear_sum_assignment_pybind11
-#     max_flow_pybind11
-#     min_cost_flow_pybind11
-#     pywrapcp
-#     pywraplp
-#     highs-py
-#     swig_helper
-#     pywraprcpsp
-#     sorted_interval_list
-#   BYPRODUCTS
-#     python/${PYTHON_PROJECT}
-#     python/${PYTHON_PROJECT}.egg-info
-#     python/build
-#     python/dist
-#   WORKING_DIRECTORY python
-#   COMMAND_EXPAND_LISTS)
+add_custom_command(
+  OUTPUT python/dist/timestamp
+  COMMAND ${CMAKE_COMMAND} -E remove_directory dist
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PYTHON_PROJECT}/.libs
+  # Don't need to copy static lib on Windows.
+  COMMAND ${CMAKE_COMMAND} -E $<IF:$<STREQUAL:$<TARGET_PROPERTY:highs-py,TYPE>,SHARED_LIBRARY>,copy,true>
+  $<$<STREQUAL:$<TARGET_PROPERTY:highs-py,TYPE>,SHARED_LIBRARY>:$<TARGET_SONAME_FILE:highs-py>>
+  ${PYTHON_PROJECT}/.libs
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:highs-py> ${PYTHON_PROJECT}/src/interfaces/highspy
+    #COMMAND ${Python3_EXECUTABLE} setup.py bdist_egg bdist_wheel
+   COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel
+  COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/python/dist/timestamp
+  DEPENDS
+    src/interfaces/highspy/setup.py
+    ${PROJECT_NAMESPACE}::highs-py
+  BYPRODUCTS
+    python/${PYTHON_PROJECT}
+    python/${PYTHON_PROJECT}.egg-info
+    python/build
+    python/dist
+WORKING_DIRECTORY python
+  COMMAND_EXPAND_LISTS)
 
-# # Main Target
-# add_custom_target(python_package ALL
-#   DEPENDS
-#     python/dist/timestamp
-#   WORKING_DIRECTORY python)
+# Main Target
+add_custom_target(python_package ALL
+  DEPENDS
+    python/dist/timestamp
+  WORKING_DIRECTORY python)
 
-# # Install rules
-# configure_file(
-#   ${PROJECT_SOURCE_DIR}/cmake/python-install.cmake.in
-#   ${PROJECT_BINARY_DIR}/python/python-install.cmake
-#   @ONLY)
-# install(SCRIPT ${PROJECT_BINARY_DIR}/python/python-install.cmake)
+  # detect virtualenv and set Pip args accordingly
+if(DEFINED ENV{VIRTUAL_ENV} OR DEFINED ENV{CONDA_PREFIX})
+  set(_pip_args)
+else()
+  set(_pip_args "--user")
+endif()
 
-# if(BUILD_VENV)
-#   # make a virtualenv to install our python package in it
-#   add_custom_command(TARGET python_package POST_BUILD
-#     # Clean previous install otherwise pip install may do nothing
-#     COMMAND ${CMAKE_COMMAND} -E remove_directory ${VENV_DIR}
-#     COMMAND ${VENV_EXECUTABLE} -p ${Python3_EXECUTABLE}
-#     $<IF:$<BOOL:${VENV_USE_SYSTEM_SITE_PACKAGES}>,--system-site-packages,-q>
-#       ${VENV_DIR}
-#     #COMMAND ${VENV_EXECUTABLE} ${VENV_DIR}
-#     # Must NOT call it in a folder containing the setup.py otherwise pip call it
-#     # (i.e. "python setup.py bdist") while we want to consume the wheel package
-#     COMMAND ${VENV_Python3_EXECUTABLE} -m pip install
-#       --find-links=${CMAKE_CURRENT_BINARY_DIR}/python/dist ${PYTHON_PROJECT}==${PROJECT_VERSION}
-#     # install modules only required to run examples
-#     COMMAND ${VENV_Python3_EXECUTABLE} -m pip install pandas matplotlib pytest
-#     BYPRODUCTS ${VENV_DIR}
-#     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#     COMMENT "Create venv and install ${PYTHON_PROJECT}"
-#     VERBATIM)
-# endif()
+execute_process(COMMAND ${Python_EXECUTABLE} -m pip install ${_pip_args} -e "setup.py")
+
+if(BUILD_VENV)
+  # make a virtualenv to install our python package in it
+  add_custom_command(TARGET python_package POST_BUILD
+    # Clean previous install otherwise pip install may do nothing
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${VENV_DIR}
+    COMMAND ${VENV_EXECUTABLE} -p ${Python3_EXECUTABLE}
+    $<IF:$<BOOL:${VENV_USE_SYSTEM_SITE_PACKAGES}>,--system-site-packages,-q>
+      ${VENV_DIR}
+    #COMMAND ${VENV_EXECUTABLE} ${VENV_DIR}
+    # Must NOT call it in a folder containing the setup.py otherwise pip call it
+    # (i.e. "python setup.py bdist") while we want to consume the wheel package
+    COMMAND ${VENV_Python3_EXECUTABLE} -m pip install
+      --find-links=${CMAKE_CURRENT_BINARY_DIR}/python/dist ${PYTHON_PROJECT}==${PROJECT_VERSION}
+    BYPRODUCTS ${VENV_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Create venv and install ${PYTHON_PROJECT}"
+    VERBATIM)
+endif()
 
 # if(BUILD_TESTING)
 #   configure_file(
@@ -304,26 +271,26 @@ search_python_module(
 #   message(STATUS "Configuring sample ${FILE_NAME} done")
 # endfunction()
 
-# ######################
-# ##  Python Example  ##
-# ######################
-# # add_python_example()
-# # CMake function to generate and build python example.
-# # Parameters:
-# #  the python filename
-# # e.g.:
-# # add_python_example(foo.py)
-# function(add_python_example FILE_NAME)
-#   message(STATUS "Configuring example ${FILE_NAME} ...")
-#   get_filename_component(EXAMPLE_NAME ${FILE_NAME} NAME_WE)
-#   get_filename_component(COMPONENT_DIR ${FILE_NAME} DIRECTORY)
-#   get_filename_component(COMPONENT_NAME ${COMPONENT_DIR} NAME)
+######################
+##  Python Example  ##
+######################
+# add_python_example()
+# CMake function to generate and build python example.
+# Parameters:
+#  the python filename
+# e.g.:
+# add_python_example(foo.py)
+function(add_python_example FILE_NAME)
+  message(STATUS "Configuring example ${FILE_NAME} ...")
+  get_filename_component(EXAMPLE_NAME ${FILE_NAME} NAME_WE)
+  get_filename_component(COMPONENT_DIR ${FILE_NAME} DIRECTORY)
+  get_filename_component(COMPONENT_NAME ${COMPONENT_DIR} NAME)
 
-#   if(BUILD_TESTING)
-#     add_test(
-#       NAME python_${COMPONENT_NAME}_${EXAMPLE_NAME}
-#       COMMAND ${VENV_Python3_EXECUTABLE} ${FILE_NAME}
-#       WORKING_DIRECTORY ${VENV_DIR})
-#   endif()
-#   message(STATUS "Configuring example ${FILE_NAME} done")
-# endfunction()
+  if(BUILD_TESTING)
+    add_test(
+      NAME python_${COMPONENT_NAME}_${EXAMPLE_NAME}
+      COMMAND ${VENV_Python3_EXECUTABLE} ${FILE_NAME}
+      WORKING_DIRECTORY ${VENV_DIR})
+  endif()
+  message(STATUS "Configuring example ${FILE_NAME} done")
+endfunction()

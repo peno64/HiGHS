@@ -1,3 +1,4 @@
+from glob import glob
 from setuptools import setup, find_packages
 import pybind11.setup_helpers
 from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -19,16 +20,18 @@ try:
     if not os.path.exists(os.path.join(highs_include_dir, 'Highs.h')):
         raise RuntimeError('Could not find HiGHS include directory')
     
+
     extensions = list()
     extensions.append(Pybind11Extension('highspy.highs_bindings',
-                                        sources=['highspy/highs_bindings.cpp'],
+                                        sorted(glob("src/interfaces/highspy/highspy/*.cpp")),
+                                        # sources=['highs_bindings.cpp'],
                                         language='c++',
                                         include_dirs=[highs_include_dir],
                                         library_dirs=[highs_lib_dir],
                                         libraries=['highs']))
     
     setup(name='highspy',
-          version='1.5.1',
+          version='1.5.2',
           packages=find_packages(),
           description='Python interface to HiGHS',
           maintainer_email='highsopt@gmail.com',
@@ -39,9 +42,8 @@ try:
           package_data={'highspy': ['highspy/*.so']},
           ext_modules=extensions,
           cmdclass={'build_ext': build_ext},
-          python_requires='>=3.6',
+          python_requires='>=3.7',
           classifiers=["Programming Language :: Python :: 3",
-                       "Programming Language :: Python :: 3.6",
                        "Programming Language :: Python :: 3.7",
                        "Programming Language :: Python :: 3.8",
                        "Programming Language :: Python :: 3.9",

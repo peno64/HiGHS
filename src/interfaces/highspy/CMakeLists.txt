@@ -1,5 +1,6 @@
 
-pybind11_add_module(highs-py MODULE highspy/highs_bindings.cpp)
+# pybind11_add_module(highs-py MODULE "${HIGHS_SOURCE_DIR}/src/interfaces/highspy/highspy/highs_bindings.cpp")
+pybind11_add_module(highs-py MODULE "highspy/highs_bindings.cpp")
 
 # note: macOS is APPLE and also UNIX !
 if(APPLE)
