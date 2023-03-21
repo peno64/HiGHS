@@ -1,13 +1,13 @@
 name: test-python-api
 
-on: [push, pull_request]
+on: [ push ]
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [macos-latest]
         python: [3.9]
 
     steps:
