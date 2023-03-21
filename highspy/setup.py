@@ -23,7 +23,7 @@ try:
 
     extensions = list()
     extensions.append(Pybind11Extension('highspy.highs_bindings',
-                                        sorted(glob("src/interfaces/highspy/highspy/*.cpp")),
+                                        sorted(glob("highspy/highspy/*.cpp")),
                                         # sources=['highs_bindings.cpp'],
                                         language='c++',
                                         include_dirs=[highs_include_dir],

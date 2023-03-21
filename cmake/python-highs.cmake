@@ -145,24 +145,24 @@ message(STATUS "Python project: ${PYTHON_PROJECT}")
 set(PYTHON_PROJECT_DIR ${PROJECT_BINARY_DIR}/python/)
 message(STATUS "Python project build path: ${PYTHON_PROJECT_DIR}/highspy")
 
-add_subdirectory(${HIGHS_SOURCE_DIR}/src/interfaces/highspy)
+add_subdirectory(${HIGHS_SOURCE_DIR}/highspy)
 
 #######################
 ## Python Packaging  ##
 #######################
-file(MAKE_DIRECTORY ${PYTHON_PROJECT_DIR}/python/highspy)
+# file(MAKE_DIRECTORY ${PYTHON_PROJECT_DIR}/python/highspy)
 # file(GENERATE OUTPUT ${PYTHON_PROJECT_DIR}/__init__.py CONTENT "__version__ = \"${PROJECT_VERSION}\"\n")
 
 file(COPY
-  src/interfaces/highspy/highspy/__init__.py
+  highspy/highspy/__init__.py
   DESTINATION ${PYTHON_PROJECT_DIR})
 
 file(COPY
-  src/interfaces/highspy/highspy/highs.py
+  highspy/highspy/highs.py
   DESTINATION ${PYTHON_PROJECT_DIR})
 
 file(COPY
-  src/interfaces/highspy/setup.py
+  highspy/setup.py
   DESTINATION ${PYTHON_PROJECT_DIR})
 
 # configure_file(
@@ -186,12 +186,12 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E $<IF:$<STREQUAL:$<TARGET_PROPERTY:highs-py,TYPE>,SHARED_LIBRARY>,copy,true>
   $<$<STREQUAL:$<TARGET_PROPERTY:highs-py,TYPE>,SHARED_LIBRARY>:$<TARGET_SONAME_FILE:highs-py>>
   ${PYTHON_PROJECT}/.libs
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:highs-py> ${PYTHON_PROJECT}/src/interfaces/highspy
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:highs-py> ${PYTHON_PROJECT}/highspy
     #COMMAND ${Python3_EXECUTABLE} setup.py bdist_egg bdist_wheel
    COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel
   COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/python/dist/timestamp
   DEPENDS
-    src/interfaces/highspy/setup.py
+    highspy/setup.py
     ${PROJECT_NAMESPACE}::highs-py
   BYPRODUCTS
     python/${PYTHON_PROJECT}
