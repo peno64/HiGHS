@@ -31,10 +31,10 @@ jobs:
         run: |
           cmake --build . --parallel --config Release
           make install
-          HIGHS_LIB_DIR=${{runner.workspace}}/installs/highs/lib >> $GITHUB_ENV
-          LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HIGHS_LIB_DIR" >> $GITHUB_ENV
-          DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$HIGHS_LIB_DIR" >> $GITHUB_ENV
-          PYTHONPATH=$PYTHONPATH:$HIGHS_LIB_DIR" >> $GITHUB_ENV
+          HIGHS_LIB_DIR=${{runner.workspace}}/installs/highs/lib 
+          LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HIGHS_LIB_DIR
+          DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$HIGHS_LIB_DIR
+          PYTHONPATH=$PYTHONPATH:$HIGHS_LIB_DIR
 
       - name: Install correct python version
         uses: actions/setup-python@v3
