@@ -536,8 +536,7 @@ target_include_directories(highs PUBLIC
 
 target_include_directories(highs PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interfaces>  
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interfaces/highspy>  
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interfaces/highspy/highspy>  
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/highspy>  
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/io>  
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ipm>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ipm/ipx>

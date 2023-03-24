@@ -145,7 +145,7 @@ message(STATUS "Python project: ${PYTHON_PROJECT}")
 set(PYTHON_PROJECT_DIR ${PROJECT_BINARY_DIR}/python/)
 message(STATUS "Python project build path: ${PYTHON_PROJECT_DIR}/highspy")
 
-add_subdirectory(${HIGHS_SOURCE_DIR}/highspy)
+# add_subdirectory(${HIGHS_SOURCE_DIR}/highspy)
 
 #######################
 ## Python Packaging  ##
@@ -154,15 +154,15 @@ add_subdirectory(${HIGHS_SOURCE_DIR}/highspy)
 # file(GENERATE OUTPUT ${PYTHON_PROJECT_DIR}/__init__.py CONTENT "__version__ = \"${PROJECT_VERSION}\"\n")
 
 file(COPY
-  highspy/highspy/__init__.py
+  highspy/__init__.py
   DESTINATION ${PYTHON_PROJECT_DIR})
 
 file(COPY
-  highspy/highspy/highs.py
+  highspy/highs.py
   DESTINATION ${PYTHON_PROJECT_DIR})
 
 file(COPY
-  highspy/setup.py
+  setup.py
   DESTINATION ${PYTHON_PROJECT_DIR})
 
 # configure_file(
@@ -191,7 +191,7 @@ add_custom_command(
    COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel
   COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/python/dist/timestamp
   DEPENDS
-    highspy/setup.py
+    setup.py
     ${PROJECT_NAMESPACE}::highs_bindings
   BYPRODUCTS
     python/${PYTHON_PROJECT}
