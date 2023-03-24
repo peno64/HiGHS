@@ -5,20 +5,20 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 import os
 # find_library and capture_output in test_log_callback seem to be the
 # reasons for including pyomo
-from pyomo.common.fileutils import find_library
+# from pyomo.common.fileutils import find_library
 
 original_pybind11_setup_helpers_macos = pybind11.setup_helpers.MACOS
 pybind11.setup_helpers.MACOS = False
 
 try:
-    highs_lib = find_library('libhighs', include_PATH=True)
-    if highs_lib is None:
-        raise RuntimeError('Could not find HiGHS library; Please make sure it is in the LD_LIBRARY_PATH environment variable')
-    highs_lib_dir = os.path.dirname(highs_lib)
-    highs_build_dir = os.path.dirname(highs_lib_dir)
-    highs_include_dir = os.path.join(highs_build_dir, 'include', 'highs')
-    if not os.path.exists(os.path.join(highs_include_dir, 'Highs.h')):
-        raise RuntimeError('Could not find HiGHS include directory')
+    # highs_lib = find_library('libhighs', include_PATH=True)
+    # if highs_lib is None:
+    #     raise RuntimeError('Could not find HiGHS library; Please make sure it is in the LD_LIBRARY_PATH environment variable')
+    # highs_lib_dir = os.path.dirname(highs_lib)
+    # highs_build_dir = os.path.dirname(highs_lib_dir)
+    # highs_include_dir = os.path.join(highs_build_dir, 'include', 'highs')
+    # if not os.path.exists(os.path.join(highs_include_dir, 'Highs.h')):
+    #     raise RuntimeError('Could not find HiGHS include directory')
     
 
     extensions = list()
@@ -26,9 +26,9 @@ try:
                                         sorted(glob("highspy/highspy/*.cpp")),
                                         # sources=['highs_bindings.cpp'],
                                         language='c++',
-                                        include_dirs=[highs_include_dir],
-                                        library_dirs=[highs_lib_dir],
-                                        libraries=['highs']))
+                                        include_dirs=["include"],
+                                        library_dirs=["lib"],
+                                        libraries=['highs', 'highs_bindings']))
     
     setup(name='highspy',
           version='1.5.2',

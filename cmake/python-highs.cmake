@@ -183,16 +183,16 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E remove_directory dist
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PYTHON_PROJECT}/.libs
   # Don't need to copy static lib on Windows.
-  COMMAND ${CMAKE_COMMAND} -E $<IF:$<STREQUAL:$<TARGET_PROPERTY:highs-py,TYPE>,SHARED_LIBRARY>,copy,true>
-  $<$<STREQUAL:$<TARGET_PROPERTY:highs-py,TYPE>,SHARED_LIBRARY>:$<TARGET_SONAME_FILE:highs-py>>
+  COMMAND ${CMAKE_COMMAND} -E $<IF:$<STREQUAL:$<TARGET_PROPERTY:highs_bindings,TYPE>,SHARED_LIBRARY>,copy,true>
+  $<$<STREQUAL:$<TARGET_PROPERTY:highs_bindings,TYPE>,SHARED_LIBRARY>:$<TARGET_SONAME_FILE:highs_bindings>>
   ${PYTHON_PROJECT}/.libs
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:highs-py> ${PYTHON_PROJECT}/highspy
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:highs_bindings> ${PYTHON_PROJECT}/highspy
     #COMMAND ${Python3_EXECUTABLE} setup.py bdist_egg bdist_wheel
    COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel
   COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/python/dist/timestamp
   DEPENDS
     highspy/setup.py
-    ${PROJECT_NAMESPACE}::highs-py
+    ${PROJECT_NAMESPACE}::highs_bindings
   BYPRODUCTS
     python/${PYTHON_PROJECT}
     python/${PYTHON_PROJECT}.egg-info
