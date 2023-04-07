@@ -16,7 +16,7 @@ under the MIT licence and has no third-party dependencies.
 HiGHS can solve linear programming (LP) models of the form:
 ```math
 \begin{aligned}
-\min                \quad & c^\top x        \\
+\min                \quad & c^T\! x        \\
 \textrm{subject to} \quad & L \le Ax \le U  \\
                           & l \le x \le u,
 \end{aligned}
@@ -25,7 +25,7 @@ as well as mixed integer linear programming (MILP) models of the same form, for
 which some of the variables must take integer values.
 
 HiGHS also solves quadratic programming (QP) models, which contain an additional
-objective term ``\frac{1}{2}x^\top Q x``, where the Hessian matrix ``Q`` is
+objective term ``\frac{1}{2}x^T\! Q x``, where the Hessian matrix ``Q`` is
 positive semi-definite. HiGHS cannot solve QP models where some of the variables
 must take integer values.
 
@@ -49,12 +49,12 @@ and computer-readable formats.
 
 The HiGHS shared library allows models to be loaded, built and modified. It can
 also be used to extract solution data and perform other operations relating to
-the incumbent model. The basic functionality is introduced via a [`Guide`](@ref Basic-features),
+the incumbent model. The basic functionality is introduced via a [`Guide`](@ref guide-basic),
 with links to examples of its use in the `Python` interface `highspy`. This makes use of the C++
 structures and enums, and is as close as possible to the native C++ library
 calls. These can be studied via the [C++ header file](https://github.com/ERGO-Code/HiGHS/blob/master/src/Highs.h).
 
-The C interface cannot make use of the C++ structures and enums, and its methods are documented [explicitly](@ref HiGHS-in-C).
+The C interface cannot make use of the C++ structures and enums, and its methods are documented [explicitly](@ref c-api).
 
 ## Solution algorithms
 
@@ -70,16 +70,17 @@ Q. Huangfu and J. A. J. Hall,
 _Mathematical Programming Computation_, 10 (1), 119-142, 2018.
 DOI: [10.1007/s12532-017-0130-5](https://link.springer.com/article/10.1007/s12532-017-0130-5)
 
-## Performance bennchmarks
+## Performance benchmarks
 
 The performance of HiGHS relative to some commercial and open-source simplex
 solvers may be assessed via the Mittlemann benchmarks:
 
- * [LP benchmarks](http://plato.asu.edu/ftp/lpopt.html)
+ * [LP (find primal-dual feasible point)](http://plato.asu.edu/ftp/lpfeas.html)
+ * [LP (find optimal basic solution)](http://plato.asu.edu/ftp/lpopt.html)
  * [MILP benchmarks](http://plato.asu.edu/ftp/milp.html).
 
 ## Feedback
 
 Your comments or specific questions on HiGHS would be greatly appreciated, so
 please send an email to `highsopt@gmail.com` to get in touch with the
-sdevelopment team.
+development team.

@@ -37,6 +37,7 @@ Documenter.makedocs(
     ),
     strict = !("strict=false" in ARGS),
     doctest = ("doctest=only" in ARGS) ? :only : true,
+    repo = "https://github.com/ERGO-Code/HiGHS/tree/latest{path}",
     linkcheck = true,
     linkcheck_ignore = [
         "https://crates.io/crates/highs",
@@ -48,25 +49,30 @@ Documenter.makedocs(
         "installation.md",
         "Executable" => "executable.md",
         "Guide" => Any[
+            "guide/index.md",
             "guide/basic.md",
+            "guide/further.md",
             "guide/advanced.md"
         ],
+	"Data structures" => Any[
+	    "structures/index.md",
+	    "structures/enums.md",
+	    "Classes" => Any[
+                "structures/classes/index.md",
+                "structures/classes/HighsSparseMatrix.md",
+                "structures/classes/HighsLp.md",
+                "structures/classes/HighsSolution.md",
+                "structures/classes/HighsBasis.md",
+                "structures/classes/HighsInfo.md",
+            ],
+	],
         "Interfaces" => Any[
             "Python" => Any[
                 "interfaces/python/index.md",
-                "interfaces/python/enums.md",
                 "interfaces/python/example-py.md",
-                "Classes" => Any[
-                    "interfaces/python/classes/Index.md",
-                    "interfaces/python/classes/HighsSparseMatrix.md",
-                    "interfaces/python/classes/HighsLp.md",
-                    "interfaces/python/classes/HighsSolution.md",
-                    "interfaces/python/classes/HighsBasis.md",
-                    "interfaces/python/classes/HighsInfo.md",
-                ],
             ],
             "C++" => Any[
-                "Get started in C++" => "interfaces/cpp/get-started.md",
+                "interfaces/cpp/index.md",
                 "The HiGHS library" => "interfaces/cpp/library.md",
                 "Linking" => "interfaces/cpp/link.md",
                 "Examples" => "interfaces/cpp/examples.md",

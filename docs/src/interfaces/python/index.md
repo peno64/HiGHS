@@ -1,4 +1,4 @@
-# Get started in Python
+# [Getting started](@id python-getting-started)
 
 ## Install
 
@@ -47,16 +47,15 @@ the [examples section](@ref example-py), it is referred to as `status`.
 
 ## First example
 
-The following Python code reads a problem from the file `model.mps`, and then
+The following Python code reads a model from the file `model.mps`, and then
 solves it.
 
 ```python
 import highspy
-import numpy as np
 
 h = highspy.Highs()
-sfilename = 'model.mps'
-status = h.readModel(filename)
-status = h.run()
-print('Model ', filename, ' has return status ', h.modelStatusToString(h.getModelStatus))
+filename = 'model.mps'
+h.readModel(filename)
+h.run()
+print('Model ', filename, ' has status ', h.getModelStatus())
 ```

@@ -1,4 +1,4 @@
-# [Example](@id example-py)
+# [Examples](@id example-py)
 
 ## Initialize HiGHS
 
@@ -11,12 +11,18 @@ import numpy as np
 h = highspy.Highs()
 ```
 
-## Load a model
+## Read a model
+
+To read a model into HiGHS from a MPS files and (CPLEX) LP files pass the file name to `readModel`. 
 
 ```python
-# Load a model from MPS file model.mps
+# Read a model from MPS file model.mps
 filename = 'model.mps'
-h.readModel(filename)
+status = h.readModel(filename)
+print('Reading model file ', filename, ' returns a status of ', status)
+filename = 'model.dat'
+status = h.readModel(filename)
+print('Reading model file ', filename, ' returns a status of ', status)
 ```
 
 ## Build a model
@@ -124,7 +130,7 @@ lp.a_matrix_.value_ = np.array([1, 3, 1, 2, 2], dtype=np.double)
 h.passModel(lp)
 ```
 
-## Solve a model
+## Solve the model
 
 The incumbent model in HiGHS is solved by calling
 ```python

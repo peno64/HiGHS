@@ -1,4 +1,4 @@
-# Classes
+# [Overview](@id classes-overview)
 
 The data members of fundamental classes in HiGHS are defined in this section.
 

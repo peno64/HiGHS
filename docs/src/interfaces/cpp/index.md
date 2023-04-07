@@ -1,4 +1,4 @@
-# Getting started
+# [Getting started](@id cpp-getting-started)
 
 HiGHS can be cloned from [GitHub](https://github.com/ERGO-Code/HiGHS) with the command
 
