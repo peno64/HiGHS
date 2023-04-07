@@ -525,7 +525,7 @@ option(JULIA "Build library and executable for Julia" OFF)
 include(cpp-highs)
 
 if (PYTHON)
-  include(python-highs)
+  # include(python-highs)
 
   # pybind11_add_module(highs_bindings MODULE "${HIGHS_SOURCE_DIR}/src/interfaces/highspy/highspy/highs_bindings.cpp")
   pybind11_add_module(highs_bindings MODULE "highspy/highs_bindings.cpp")
