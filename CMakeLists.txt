@@ -74,7 +74,7 @@ endif()
 
 include(CTest)
 
-option(FAST_BUILD "Fast build: " ON)
+option(FAST_BUILD "Fast build: " OFF)
 
 # By default only build the C++ library.
 option(BUILD_CXX "Build C++ library" ON)
