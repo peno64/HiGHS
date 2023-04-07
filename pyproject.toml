@@ -3,7 +3,7 @@
 requires = [
   "setuptools",
   "pybind11",
-  "pyomo",
+  # "pyomo",
   "wheel",
 ] 
 

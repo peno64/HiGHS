@@ -4,41 +4,47 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 import os
 # find_library and capture_output in test_log_callback seem to be the
 # reasons for including pyomo
-from pyomo.common.fileutils import find_library
 
-original_pybind11_setup_helpers_macos = pybind11.setup_helpers.MACOS
-pybind11.setup_helpers.MACOS = False
+# from pyomo.common.fileutils import find_library
+
+# original_pybind11_setup_helpers_macos = pybind11.setup_helpers.MACOS
+# pybind11.setup_helpers.MACOS = False
 
 try:
-    highs_lib = find_library('libhighs', include_PATH=True)
-    if highs_lib is None:
-        raise RuntimeError('Could not find HiGHS library; Please make sure it is in the LD_LIBRARY_PATH environment variable')
-    highs_lib_dir = os.path.dirname(highs_lib)
-    highs_build_dir = os.path.dirname(highs_lib_dir)
-    highs_include_dir = os.path.join(highs_build_dir, 'include', 'highs')
-    if not os.path.exists(os.path.join(highs_include_dir, 'Highs.h')):
-        raise RuntimeError('Could not find HiGHS include directory')
+    # highs_lib = find_library('libhighs', include_PATH=True)
+    # if highs_lib is None:
+    #     raise RuntimeError('Could not find HiGHS library; Please make sure it is in the LD_LIBRARY_PATH environment variable')
+    # highs_lib_dir = os.path.dirname(highs_lib)
+    # highs_build_dir = os.path.dirname(highs_lib_dir)
+    # highs_include_dir = os.path.join(highs_build_dir, 'include', 'highs')
+    # if not os.path.exists(os.path.join(highs_include_dir, 'Highs.h')):
+    #     raise RuntimeError('Could not find HiGHS include directory')
     
-    extensions = list()
-    extensions.append(Pybind11Extension('highspy.highs_bindings',
-                                        sources=['highspy/highs_bindings.cpp'],
-                                        language='c++',
-                                        include_dirs=[highs_include_dir],
-                                        library_dirs=[highs_lib_dir],
-                                        libraries=['highs']))
+    # extensions = list()
+    # extensions.append(Pybind11Extension('highspy.highs_bindings',
+    #                                     sources=['highspy/highs_bindings.cpp'],
+    #                                     language='c++',
+    #                                     include_dirs=[highs_include_dir],
+    #                                     library_dirs=[highs_lib_dir],
+    #                                     libraries=['highs']))
     
     setup(name='highspy',
-          version='1.5.1',
-          packages=find_packages(),
+          version='1.5.2',
+          packages=find_packages(
+            # # All keyword arguments below are optional:
+            # where='src',  # '.' by default
+            # include=['mypackage*'],  # ['*'] by default
+            # exclude=['mypackage.tests'],  # empty by default
+          ),
           description='Python interface to HiGHS',
           maintainer_email='highsopt@gmail.com',
           license='MIT',
           url='https://github.com/ergo-code/highs',
-          install_requires=['pybind11', 'numpy', 'pyomo'],
+          install_requires=['pybind11', 'numpy'], # 'pyomo'],
           include_package_data=True,
-          package_data={'highspy': ['highspy/*.so']},
-          ext_modules=extensions,
-          cmdclass={'build_ext': build_ext},
+          package_data={'highspy': ['build/lib/*.so']},
+        #   ext_modules=extensions,
+        #   cmdclass={'build_ext': build_ext},
           python_requires='>=3.6',
           classifiers=["Programming Language :: Python :: 3",
                        "Programming Language :: Python :: 3.6",
@@ -50,4 +56,5 @@ try:
                        "License :: OSI Approved :: MIT License"]
           )
 finally:
-    pybind11.setup_helpers.MACOS = original_pybind11_setup_helpers_macos
+    print("setup.py done")
+    # pybind11.setup_helpers.MACOS = original_pybind11_setup_helpers_macos

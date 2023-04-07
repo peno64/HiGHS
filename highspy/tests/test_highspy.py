@@ -1,7 +1,7 @@
 import unittest
 import highspy
 import numpy as np
-from pyomo.common.tee import capture_output
+# from pyomo.common.tee import capture_output
 from io import StringIO
 
 

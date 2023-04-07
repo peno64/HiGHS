@@ -527,27 +527,29 @@ include(cpp-highs)
 if (PYTHON)
   include(python-highs)
 
-# pybind11_add_module(highs_bindings MODULE "${HIGHS_SOURCE_DIR}/src/interfaces/highspy/highspy/highs_bindings.cpp")
-pybind11_add_module(highs_bindings MODULE "highspy/highs_bindings.cpp")
+  # pybind11_add_module(highs_bindings MODULE "${HIGHS_SOURCE_DIR}/src/interfaces/highspy/highspy/highs_bindings.cpp")
+  pybind11_add_module(highs_bindings MODULE "highspy/highs_bindings.cpp")
 
-# note: macOS is APPLE and also UNIX !
-if(APPLE)
-  set_target_properties(highs_bindings PROPERTIES
-    SUFFIX ".so"
-    INSTALL_RPATH "@loader_path;@loader_path/../../../${PYTHON_PROJECT}/.libs"
-    )
-  set_property(TARGET highs_bindings APPEND PROPERTY
-    LINK_FLAGS "-flat_namespace -undefined suppress"
-    )
-elseif(UNIX)
-  set_target_properties(highs_bindings PROPERTIES
-    INSTALL_RPATH "$ORIGIN:$ORIGIN/../../../${PYTHON_PROJECT}/.libs"
-    )
-endif()
+  # note: macOS is APPLE and also UNIX !
+  if(APPLE)
+    set_target_properties(highs_bindings PROPERTIES
+      SUFFIX ".so"
+      INSTALL_RPATH "@loader_path;@loader_path/../../../${PYTHON_PROJECT}/.libs"
+      )
+    set_property(TARGET highs_bindings APPEND PROPERTY
+      LINK_FLAGS "-flat_namespace -undefined suppress"
+      )
+  elseif(UNIX)
+    set_target_properties(highs_bindings PROPERTIES
+      INSTALL_RPATH "$ORIGIN:$ORIGIN/../../../${PYTHON_PROJECT}/.libs"
+      )
+  endif()
 
-target_link_libraries(highs_bindings PRIVATE ${PROJECT_NAMESPACE}::highs)
-add_library(${PROJECT_NAMESPACE}::highs_bindings ALIAS highs_bindings)
+  target_link_libraries(highs_bindings PRIVATE ${PROJECT_NAMESPACE}::highs)
+  add_library(${PROJECT_NAMESPACE}::highs_bindings ALIAS highs_bindings)
 
+  install(TARGETS highs_bindings EXPORT highs-targets
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 # Add tests in examples/tests

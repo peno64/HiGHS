@@ -136,161 +136,165 @@ if(BUILD_TESTING)
   endfunction()
 endif()
 
-#######################
-##  PYTHON WRAPPERS  ##
-#######################
+# #######################
+# ##  PYTHON WRAPPERS  ##
+# #######################
 
-set(PYTHON_PROJECT highspy)
-message(STATUS "Python project: ${PYTHON_PROJECT}")
-set(PYTHON_PROJECT_DIR ${PROJECT_BINARY_DIR}/python/)
-message(STATUS "Python project build path: ${PYTHON_PROJECT_DIR}/highspy")
+# set(PYTHON_PROJECT highspy)
+# message(STATUS "Python project: ${PYTHON_PROJECT}")
+# set(PYTHON_PROJECT_DIR ${PROJECT_BINARY_DIR}/python/)
+# message(STATUS "Python project build path: ${PYTHON_PROJECT_DIR}/highspy")
 
-# add_subdirectory(${HIGHS_SOURCE_DIR}/highspy)
+# # add_subdirectory(${HIGHS_SOURCE_DIR}/highspy)
 
-#######################
-## Python Packaging  ##
-#######################
-# file(MAKE_DIRECTORY ${PYTHON_PROJECT_DIR}/python/highspy)
-# file(GENERATE OUTPUT ${PYTHON_PROJECT_DIR}/__init__.py CONTENT "__version__ = \"${PROJECT_VERSION}\"\n")
+# #######################
+# ## Python Packaging  ##
+# #######################
+# # file(MAKE_DIRECTORY ${PYTHON_PROJECT_DIR}/python/highspy)
+# # file(GENERATE OUTPUT ${PYTHON_PROJECT_DIR}/__init__.py CONTENT "__version__ = \"${PROJECT_VERSION}\"\n")
 
-file(COPY
-  highspy/__init__.py
-  DESTINATION ${PYTHON_PROJECT_DIR})
+# file(COPY
+#   highspy/__init__.py
+#   DESTINATION ${PYTHON_PROJECT_DIR})
 
-file(COPY
-  highspy/highs.py
-  DESTINATION ${PYTHON_PROJECT_DIR})
+# file(COPY
+#   highspy/highs.py
+#   DESTINATION ${PYTHON_PROJECT_DIR})
 
-file(COPY
-  setup.py
-  DESTINATION ${PYTHON_PROJECT_DIR})
+# file(COPY
+#   setup.py
+#   DESTINATION ${PYTHON_PROJECT_DIR})
 
-# configure_file(
-#   ${PROJECT_SOURCE_DIR}/ortools/python/README.pypi.txt
-#   ${PROJECT_BINARY_DIR}/python/README.txt
-#   COPYONLY)
+# file(COPY
+#   highspy/highs_bindings.cpp
+#   DESTINATION ${PYTHON_PROJECT_DIR})
 
-# Look for required python modules
-search_python_module(
-  NAME setuptools
-  PACKAGE setuptools)
-search_python_module(
-  NAME wheel
-  PACKAGE wheel)
+# # configure_file(
+# #   ${PROJECT_SOURCE_DIR}/ortools/python/README.pypi.txt
+# #   ${PROJECT_BINARY_DIR}/python/README.txt
+# #   COPYONLY)
 
-add_custom_command(
-  OUTPUT python/dist/timestamp
-  COMMAND ${CMAKE_COMMAND} -E remove_directory dist
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${PYTHON_PROJECT}/.libs
-  # Don't need to copy static lib on Windows.
-  COMMAND ${CMAKE_COMMAND} -E $<IF:$<STREQUAL:$<TARGET_PROPERTY:highs_bindings,TYPE>,SHARED_LIBRARY>,copy,true>
-  $<$<STREQUAL:$<TARGET_PROPERTY:highs_bindings,TYPE>,SHARED_LIBRARY>:$<TARGET_SONAME_FILE:highs_bindings>>
-  ${PYTHON_PROJECT}/.libs
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:highs_bindings> ${PYTHON_PROJECT}/highspy
-    #COMMAND ${Python3_EXECUTABLE} setup.py bdist_egg bdist_wheel
-   COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel
-  COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/python/dist/timestamp
-  DEPENDS
-    setup.py
-    ${PROJECT_NAMESPACE}::highs_bindings
-  BYPRODUCTS
-    python/${PYTHON_PROJECT}
-    python/${PYTHON_PROJECT}.egg-info
-    python/build
-    python/dist
-WORKING_DIRECTORY python
-  COMMAND_EXPAND_LISTS)
+# # Look for required python modules
+# search_python_module(
+#   NAME setuptools
+#   PACKAGE setuptools)
+# search_python_module(
+#   NAME wheel
+#   PACKAGE wheel)
 
-# Main Target
-add_custom_target(python_package ALL
-  DEPENDS
-    python/dist/timestamp
-  WORKING_DIRECTORY python)
+# add_custom_command(
+#   OUTPUT python/dist/timestamp
+#   COMMAND ${CMAKE_COMMAND} -E remove_directory dist
+#   COMMAND ${CMAKE_COMMAND} -E make_directory ${PYTHON_PROJECT}/.libs
+#   # Don't need to copy static lib on Windows.
+#   COMMAND ${CMAKE_COMMAND} -E $<IF:$<STREQUAL:$<TARGET_PROPERTY:highs_bindings,TYPE>,SHARED_LIBRARY>,copy,true>
+#   $<$<STREQUAL:$<TARGET_PROPERTY:highs_bindings,TYPE>,SHARED_LIBRARY>:$<TARGET_SONAME_FILE:highs_bindings>>
+#   ${PYTHON_PROJECT}/.libs
+#   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:highs_bindings> ${PYTHON_PROJECT}/highspy
+#     #COMMAND ${Python3_EXECUTABLE} setup.py bdist_egg bdist_wheel
+#    COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel
+#   COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/python/dist/timestamp
+#   DEPENDS
+#     setup.py
+#     ${PROJECT_NAMESPACE}::highs_bindings
+#   BYPRODUCTS
+#     python/${PYTHON_PROJECT}
+#     python/${PYTHON_PROJECT}.egg-info
+#     python/build
+#     python/dist
+# WORKING_DIRECTORY python
+#   COMMAND_EXPAND_LISTS)
 
-  # detect virtualenv and set Pip args accordingly
-if(DEFINED ENV{VIRTUAL_ENV} OR DEFINED ENV{CONDA_PREFIX})
-  set(_pip_args)
-else()
-  set(_pip_args "--user")
-endif()
+# # Main Target
+# add_custom_target(python_package ALL
+#   DEPENDS
+#     python/dist/timestamp
+#   WORKING_DIRECTORY python)
 
-execute_process(COMMAND ${Python_EXECUTABLE} -m pip install ${_pip_args} -e "setup.py")
-
-if(BUILD_VENV)
-  # make a virtualenv to install our python package in it
-  add_custom_command(TARGET python_package POST_BUILD
-    # Clean previous install otherwise pip install may do nothing
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${VENV_DIR}
-    COMMAND ${VENV_EXECUTABLE} -p ${Python3_EXECUTABLE}
-    $<IF:$<BOOL:${VENV_USE_SYSTEM_SITE_PACKAGES}>,--system-site-packages,-q>
-      ${VENV_DIR}
-    #COMMAND ${VENV_EXECUTABLE} ${VENV_DIR}
-    # Must NOT call it in a folder containing the setup.py otherwise pip call it
-    # (i.e. "python setup.py bdist") while we want to consume the wheel package
-    COMMAND ${VENV_Python3_EXECUTABLE} -m pip install
-      --find-links=${CMAKE_CURRENT_BINARY_DIR}/python/dist ${PYTHON_PROJECT}==${PROJECT_VERSION}
-    BYPRODUCTS ${VENV_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Create venv and install ${PYTHON_PROJECT}"
-    VERBATIM)
-endif()
-
-# if(BUILD_TESTING)
-#   configure_file(
-#     ${PROJECT_SOURCE_DIR}/ortools/init/python/version_test.py.in
-#     ${PROJECT_BINARY_DIR}/python/version_test.py
-#     @ONLY)
-
-#   # run the tests within the virtualenv
-#   add_test(NAME python_init_version_test
-#     COMMAND ${VENV_Python3_EXECUTABLE} ${PROJECT_BINARY_DIR}/python/version_test.py)
+#   # detect virtualenv and set Pip args accordingly
+# if(DEFINED ENV{VIRTUAL_ENV} OR DEFINED ENV{CONDA_PREFIX})
+#   set(_pip_args)
+# else()
+#   set(_pip_args "--user")
 # endif()
 
-# #####################
-# ##  Python Sample  ##
-# #####################
-# # add_python_sample()
-# # CMake function to generate and build python sample.
+# execute_process(COMMAND ${Python_EXECUTABLE} -m pip install ${_pip_args} -e "setup.py")
+
+# if(BUILD_VENV)
+#   # make a virtualenv to install our python package in it
+#   add_custom_command(TARGET python_package POST_BUILD
+#     # Clean previous install otherwise pip install may do nothing
+#     COMMAND ${CMAKE_COMMAND} -E remove_directory ${VENV_DIR}
+#     COMMAND ${VENV_EXECUTABLE} -p ${Python3_EXECUTABLE}
+#     $<IF:$<BOOL:${VENV_USE_SYSTEM_SITE_PACKAGES}>,--system-site-packages,-q>
+#       ${VENV_DIR}
+#     #COMMAND ${VENV_EXECUTABLE} ${VENV_DIR}
+#     # Must NOT call it in a folder containing the setup.py otherwise pip call it
+#     # (i.e. "python setup.py bdist") while we want to consume the wheel package
+#     COMMAND ${VENV_Python3_EXECUTABLE} -m pip install
+#       --find-links=${CMAKE_CURRENT_BINARY_DIR}/python/dist ${PYTHON_PROJECT}==${PROJECT_VERSION}
+#     BYPRODUCTS ${VENV_DIR}
+#     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+#     COMMENT "Create venv and install ${PYTHON_PROJECT}"
+#     VERBATIM)
+# endif()
+
+# # if(BUILD_TESTING)
+# #   configure_file(
+# #     ${PROJECT_SOURCE_DIR}/ortools/init/python/version_test.py.in
+# #     ${PROJECT_BINARY_DIR}/python/version_test.py
+# #     @ONLY)
+
+# #   # run the tests within the virtualenv
+# #   add_test(NAME python_init_version_test
+# #     COMMAND ${VENV_Python3_EXECUTABLE} ${PROJECT_BINARY_DIR}/python/version_test.py)
+# # endif()
+
+# # #####################
+# # ##  Python Sample  ##
+# # #####################
+# # # add_python_sample()
+# # # CMake function to generate and build python sample.
+# # # Parameters:
+# # #  the python filename
+# # # e.g.:
+# # # add_python_sample(foo.py)
+# # function(add_python_sample FILE_NAME)
+# #   message(STATUS "Configuring sample ${FILE_NAME} ...")
+# #   get_filename_component(SAMPLE_NAME ${FILE_NAME} NAME_WE)
+# #   get_filename_component(SAMPLE_DIR ${FILE_NAME} DIRECTORY)
+# #   get_filename_component(COMPONENT_DIR ${SAMPLE_DIR} DIRECTORY)
+# #   get_filename_component(COMPONENT_NAME ${COMPONENT_DIR} NAME)
+
+# #   if(BUILD_TESTING)
+# #     add_test(
+# #       NAME python_${COMPONENT_NAME}_${SAMPLE_NAME}
+# #       COMMAND ${VENV_Python3_EXECUTABLE} ${FILE_NAME}
+# #       WORKING_DIRECTORY ${VENV_DIR})
+# #   endif()
+# #   message(STATUS "Configuring sample ${FILE_NAME} done")
+# # endfunction()
+
+# ######################
+# ##  Python Example  ##
+# ######################
+# # add_python_example()
+# # CMake function to generate and build python example.
 # # Parameters:
 # #  the python filename
 # # e.g.:
-# # add_python_sample(foo.py)
-# function(add_python_sample FILE_NAME)
-#   message(STATUS "Configuring sample ${FILE_NAME} ...")
-#   get_filename_component(SAMPLE_NAME ${FILE_NAME} NAME_WE)
-#   get_filename_component(SAMPLE_DIR ${FILE_NAME} DIRECTORY)
-#   get_filename_component(COMPONENT_DIR ${SAMPLE_DIR} DIRECTORY)
+# # add_python_example(foo.py)
+# function(add_python_example FILE_NAME)
+#   message(STATUS "Configuring example ${FILE_NAME} ...")
+#   get_filename_component(EXAMPLE_NAME ${FILE_NAME} NAME_WE)
+#   get_filename_component(COMPONENT_DIR ${FILE_NAME} DIRECTORY)
 #   get_filename_component(COMPONENT_NAME ${COMPONENT_DIR} NAME)
 
 #   if(BUILD_TESTING)
 #     add_test(
-#       NAME python_${COMPONENT_NAME}_${SAMPLE_NAME}
+#       NAME python_${COMPONENT_NAME}_${EXAMPLE_NAME}
 #       COMMAND ${VENV_Python3_EXECUTABLE} ${FILE_NAME}
 #       WORKING_DIRECTORY ${VENV_DIR})
 #   endif()
-#   message(STATUS "Configuring sample ${FILE_NAME} done")
+#   message(STATUS "Configuring example ${FILE_NAME} done")
 # endfunction()
-
-######################
-##  Python Example  ##
-######################
-# add_python_example()
-# CMake function to generate and build python example.
-# Parameters:
-#  the python filename
-# e.g.:
-# add_python_example(foo.py)
-function(add_python_example FILE_NAME)
-  message(STATUS "Configuring example ${FILE_NAME} ...")
-  get_filename_component(EXAMPLE_NAME ${FILE_NAME} NAME_WE)
-  get_filename_component(COMPONENT_DIR ${FILE_NAME} DIRECTORY)
-  get_filename_component(COMPONENT_NAME ${COMPONENT_DIR} NAME)
-
-  if(BUILD_TESTING)
-    add_test(
-      NAME python_${COMPONENT_NAME}_${EXAMPLE_NAME}
-      COMMAND ${VENV_Python3_EXECUTABLE} ${FILE_NAME}
-      WORKING_DIRECTORY ${VENV_DIR})
-  endif()
-  message(STATUS "Configuring example ${FILE_NAME} done")
-endfunction()
