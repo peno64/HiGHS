@@ -22,7 +22,7 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DFAST_BUILD=ON -DBUILD_SHARED_LIBS=ON 
+        run: cmake $GITHUB_WORKSPACE -DPYTHON=ON -DFAST_BUILD=ON -DBUILD_SHARED_LIBS=ON 
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
