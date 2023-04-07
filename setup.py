@@ -42,7 +42,7 @@ try:
           url='https://github.com/ergo-code/highs',
           install_requires=['pybind11', 'numpy'], # 'pyomo'],
           include_package_data=True,
-          package_data={'highspy': ['build/lib/*.so']},
+          package_data={'highspy': ['build/lib/*.so','lib/libhighs*.so','lib/highs_bindings*.so']},
         #   ext_modules=extensions,
         #   cmdclass={'build_ext': build_ext},
           python_requires='>=3.6',
