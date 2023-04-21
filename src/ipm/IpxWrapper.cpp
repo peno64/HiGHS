@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file ipm/IpxWrapper.cpp
@@ -78,7 +76,7 @@ HighsStatus solveLpIpx(const HighsOptions& options,
   //
   // Set display according to output
   parameters.display = 1;
-  if (!options.output_flag) parameters.display = 0;
+  if (!options.output_flag | !options.log_to_console) parameters.display = 0;
   // Modify parameters.debug according to log_dev_level
   parameters.debug = 0;
   if (options.log_dev_level == kHighsLogDevLevelDetailed) {
@@ -92,6 +90,25 @@ HighsStatus solveLpIpx(const HighsOptions& options,
   }
   // Just test feasibility and optimality tolerances for now
   // ToDo Set more parameters
+  //
+  // Translate dualization option
+  //
+  // parameters.dualize = -2 => Possibly dualize - Filippo style
+  // parameters.dualize = -1 => Possibly dualize - Lukas style
+  // parameters.dualize = 0 => No dualization
+  // parameters.dualize = 1 => Perform dualization
+  if (options.ipx_dualize_strategy == kIpxDualizeStrategyOn) {
+    parameters.dualize = 1;
+  } else if (options.ipx_dualize_strategy == kIpxDualizeStrategyOff) {
+    parameters.dualize = 0;
+  } else if (options.ipx_dualize_strategy == kIpxDualizeStrategyLukas) {
+    parameters.dualize = -1;
+  } else if (options.ipx_dualize_strategy == kIpxDualizeStrategyFilippo) {
+    parameters.dualize = -2;
+  } else {
+    assert(111==222);
+  }
+  
   parameters.ipm_feasibility_tol = min(options.primal_feasibility_tolerance,
                                        options.dual_feasibility_tolerance);
 
@@ -132,8 +149,8 @@ HighsStatus solveLpIpx(const HighsOptions& options,
                num_row, num_col, Ap[num_col]);
 
   ipx::Int load_status =
-      lps.LoadModel(num_col, &objective[0], &col_lb[0], &col_ub[0], num_row,
-                    &Ap[0], &Ai[0], &Av[0], &rhs[0], &constraint_type[0]);
+    lps.LoadModel(num_col, objective.data(), col_lb.data(), col_ub.data(), num_row,
+		  Ap.data(), Ai.data(), Av.data(), rhs.data(), constraint_type.data());
 
   if (load_status) {
     model_status = HighsModelStatus::kSolveError;
@@ -305,10 +322,9 @@ HighsStatus solveLpIpx(const HighsOptions& options,
     ipx_solution.ipx_row_dual.resize(num_row);
     ipx_solution.ipx_row_status.resize(num_row);
     ipx_solution.ipx_col_status.resize(num_col);
-    ipx::Int errflag = lps.GetBasicSolution(
-        &ipx_solution.ipx_col_value[0], &ipx_solution.ipx_row_value[0],
-        &ipx_solution.ipx_row_dual[0], &ipx_solution.ipx_col_dual[0],
-        &ipx_solution.ipx_row_status[0], &ipx_solution.ipx_col_status[0]);
+    ipx::Int errflag = lps.GetBasicSolution(ipx_solution.ipx_col_value.data(), ipx_solution.ipx_row_value.data(),
+					    ipx_solution.ipx_row_dual.data(), ipx_solution.ipx_col_dual.data(),
+					    ipx_solution.ipx_row_status.data(), ipx_solution.ipx_col_status.data());
     if (errflag != 0) {
       highsLogUser(options.log_options, HighsLogType::kError,
 		   "IPX crossover getting basic solution: flag = %d\n",
@@ -492,45 +508,37 @@ HighsStatus reportIpxSolveStatus(const HighsOptions& options,
   } else if (solve_status == IPX_STATUS_stopped) {
     highsLogUser(options.log_options, HighsLogType::kWarning, "Ipx: Stopped\n");
     return HighsStatus::kWarning;
+    // Remaining cases are errors so drop through to return HighsStatus::kError;
   } else if (solve_status == IPX_STATUS_no_model) {
     if (error_flag == IPX_ERROR_argument_null) {
       highsLogUser(options.log_options, HighsLogType::kError,
                    "Ipx: Invalid input - argument_null\n");
-      return HighsStatus::kError;
     } else if (error_flag == IPX_ERROR_invalid_dimension) {
       highsLogUser(options.log_options, HighsLogType::kError,
                    "Ipx: Invalid input - invalid dimension\n");
-      return HighsStatus::kError;
     } else if (error_flag == IPX_ERROR_invalid_matrix) {
       highsLogUser(options.log_options, HighsLogType::kError,
                    "Ipx: Invalid input - invalid matrix\n");
-      return HighsStatus::kError;
     } else if (error_flag == IPX_ERROR_invalid_vector) {
       highsLogUser(options.log_options, HighsLogType::kError,
                    "Ipx: Invalid input - invalid vector\n");
-      return HighsStatus::kError;
     } else if (error_flag == IPX_ERROR_invalid_basis) {
       highsLogUser(options.log_options, HighsLogType::kError,
                    "Ipx: Invalid input - invalid basis\n");
-      return HighsStatus::kError;
     } else {
       highsLogUser(options.log_options, HighsLogType::kError,
                    "Ipx: Invalid input - unrecognised error\n");
-      return HighsStatus::kError;
     }
   } else if (solve_status == IPX_STATUS_out_of_memory) {
     highsLogUser(options.log_options, HighsLogType::kError,
                  "Ipx: Out of memory\n");
-    return HighsStatus::kError;
   } else if (solve_status == IPX_STATUS_internal_error) {
     highsLogUser(options.log_options, HighsLogType::kError,
                  "Ipx: Internal error %" HIGHSINT_FORMAT "\n", (int)error_flag);
-    return HighsStatus::kError;
   } else {
     highsLogUser(options.log_options, HighsLogType::kError,
                  "Ipx: unrecognised solve status = %" HIGHSINT_FORMAT "\n",
                  (int)solve_status);
-    return HighsStatus::kError;
   }
   return HighsStatus::kError;
 }
@@ -825,8 +833,8 @@ void getHighsNonVertexSolution(const HighsOptions& options,
   std::vector<double> slack(num_row);
   std::vector<double> y(num_row);
 
-  lps.GetInteriorSolution(&x[0], &xl[0], &xu[0], &slack[0], &y[0], &zl[0],
-                          &zu[0]);
+  lps.GetInteriorSolution(x.data(), xl.data(), xu.data(), slack.data(), y.data(), zl.data(),
+                          zu.data());
 
   ipxSolutionToHighsSolution(options, lp, rhs, constraint_type, num_col,
                              num_row, x, slack, y, zl, zu,

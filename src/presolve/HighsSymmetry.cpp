@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file HighsSymmetry.cpp
@@ -302,7 +300,9 @@ HighsInt StabilizerOrbits::orbitalFixing(HighsDomain& domain) const {
       if (newFixed != 0) {
         domain.propagate();
         if (domain.infeasible()) return numFixed;
-        if (domain.getDomainChangeStack().size() - oldSize > newFixed) i = -1;
+        if ((HighsInt)(domain.getDomainChangeStack().size() - oldSize) >
+            newFixed)
+          i = -1;
       }
     }
   }
@@ -850,18 +850,18 @@ bool HighsSymmetryDetection::splitCell(HighsInt cell, HighsInt splitPoint) {
   // employ prefix pruning scheme as in bliss
   if (!firstLeaveCertificate.empty()) {
     firstLeavePrefixLen +=
-        (firstLeavePrefixLen == currNodeCertificate.size()) *
+        (firstLeavePrefixLen == (HighsInt)currNodeCertificate.size()) *
         (certificateVal == firstLeaveCertificate[currNodeCertificate.size()]);
     bestLeavePrefixLen +=
-        (bestLeavePrefixLen == currNodeCertificate.size()) *
+        (bestLeavePrefixLen == (HighsInt)currNodeCertificate.size()) *
         (certificateVal == bestLeaveCertificate[currNodeCertificate.size()]);
 
     // if the node certificate is not a prefix of the first leave's certificate
     // and it comes lexicographically after the certificate value of the
     // lexicographically smallest leave certificate we prune the node
-    if (firstLeavePrefixLen <= currNodeCertificate.size() &&
-        bestLeavePrefixLen <= currNodeCertificate.size()) {
-      u32 diffVal = bestLeavePrefixLen == currNodeCertificate.size()
+    if (firstLeavePrefixLen <= (HighsInt)currNodeCertificate.size() &&
+        bestLeavePrefixLen <= (HighsInt)currNodeCertificate.size()) {
+      u32 diffVal = bestLeavePrefixLen == (HighsInt)currNodeCertificate.size()
                         ? certificateVal
                         : currNodeCertificate[bestLeavePrefixLen];
       if (diffVal > bestLeaveCertificate[bestLeavePrefixLen]) return false;
@@ -1377,7 +1377,7 @@ bool HighsSymmetryDetection::compareCurrentGraph(
     for (HighsInt j = Gstart[i]; j != Gend[i]; ++j)
       if (!otherGraph.find(std::make_tuple(vertexToCell[Gedge[j].first],
                                            colCell, Gedge[j].second))) {
-        // return which cell does not match in its neighborhood as this should
+        // return which cell does not match in its neighbourhood as this should
         // have been detected with the hashing it can very rarely happen due to
         // a hash collision. In such a case we want to backtrack to the last
         // time where we targeted this particular cell. Otherwise we could spent
@@ -1720,9 +1720,9 @@ void HighsSymmetryDetection::run(HighsSymmetries& symmetries) {
         HighsInt wrongCell = -1;
         HighsInt backtrackDepth = nodeStack.size() - 1;
         assert(currNodeCertificate.size() == firstLeaveCertificate.size());
-        if (firstLeavePrefixLen == currNodeCertificate.size() ||
-            bestLeavePrefixLen == currNodeCertificate.size()) {
-          if (firstLeavePrefixLen == currNodeCertificate.size() &&
+        if (firstLeavePrefixLen == (HighsInt)currNodeCertificate.size() ||
+            bestLeavePrefixLen == (HighsInt)currNodeCertificate.size()) {
+          if (firstLeavePrefixLen == (HighsInt)currNodeCertificate.size() &&
               compareCurrentGraph(firstLeaveGraph, wrongCell)) {
             HighsInt k = (numAutomorphisms++) & 63;
             HighsInt* permutation = automorphisms.data() + k * numVertices;
@@ -1749,7 +1749,8 @@ void HighsSymmetryDetection::run(HighsSymmetries& symmetries) {
             }
             backtrackDepth = std::min(backtrackDepth, firstPathDepth);
           } else if (!bestLeavePartition.empty() &&
-                     bestLeavePrefixLen == currNodeCertificate.size() &&
+                     bestLeavePrefixLen ==
+                         (HighsInt)currNodeCertificate.size() &&
                      compareCurrentGraph(bestLeaveGraph, wrongCell)) {
             HighsInt k = (numAutomorphisms++) & 63;
             HighsInt* permutation = automorphisms.data() + k * numVertices;
@@ -1776,7 +1777,8 @@ void HighsSymmetryDetection::run(HighsSymmetries& symmetries) {
             }
 
             backtrackDepth = std::min(backtrackDepth, bestPathDepth);
-          } else if (bestLeavePrefixLen < currNodeCertificate.size() &&
+          } else if (bestLeavePrefixLen <
+                         (HighsInt)currNodeCertificate.size() &&
                      currNodeCertificate[bestLeavePrefixLen] >
                          bestLeaveCertificate[bestLeavePrefixLen]) {
             // certificate value is lexicographically above the smallest one
@@ -1790,7 +1792,7 @@ void HighsSymmetryDetection::run(HighsSymmetries& symmetries) {
           } else {
             // This case can be caused by a hash collision which was now
             // detected in the graph comparison call. The graph comparison call
-            // will return the cell where the vertex neighborhood caused a
+            // will return the cell where the vertex neighbourhood caused a
             // mismatch on the edges. This would have been detected by
             // an exact partition refinement when we targeted that cell the last
             // time, so that is where we can backtrack to.

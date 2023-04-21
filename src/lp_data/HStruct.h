@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file lp_data/HStruct.h
@@ -35,6 +33,12 @@ struct HighsSolution {
   std::vector<double> row_value;
   std::vector<double> row_dual;
   void invalidate();
+  void clear();
+};
+
+struct HighsObjectiveSolution {
+  double objective;
+  std::vector<double> col_value;
   void clear();
 };
 
@@ -78,10 +82,16 @@ struct HighsScale {
 };
 
 struct HighsLpMods {
-  std::vector<HighsInt> save_semi_variable_lower_bound_index;
-  std::vector<double> save_semi_variable_lower_bound_value;
-  std::vector<HighsInt> save_semi_variable_upper_bound_index;
-  std::vector<double> save_semi_variable_upper_bound_value;
+  std::vector<HighsInt> save_non_semi_variable_index;
+  std::vector<HighsInt> save_inconsistent_semi_variable_index;
+  std::vector<double> save_inconsistent_semi_variable_lower_bound_value;
+  std::vector<double> save_inconsistent_semi_variable_upper_bound_value;
+  std::vector<HighsVarType> save_inconsistent_semi_variable_type;
+
+  std::vector<HighsInt> save_relaxed_semi_variable_lower_bound_index;
+  std::vector<double> save_relaxed_semi_variable_lower_bound_value;
+  std::vector<HighsInt> save_tightened_semi_variable_upper_bound_index;
+  std::vector<double> save_tightened_semi_variable_upper_bound_value;
   void clear();
   bool isClear();
 };

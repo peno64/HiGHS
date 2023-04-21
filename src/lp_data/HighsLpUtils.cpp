@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file lp_data/HighsUtils.cpp
@@ -66,7 +64,8 @@ HighsStatus assessLp(HighsLp& lp, const HighsOptions& options) {
   if (return_status == HighsStatus::kError) return return_status;
   // Assess the LP column bounds
   call_status = assessBounds(options, "Col", 0, index_collection, lp.col_lower_,
-                             lp.col_upper_, options.infinite_bound);
+                             lp.col_upper_, options.infinite_bound,
+                             lp.integrality_.data());
   return_status = interpretCallStatus(options.log_options, call_status,
                                       return_status, "assessBounds");
   if (return_status == HighsStatus::kError) return return_status;
@@ -350,7 +349,8 @@ HighsStatus assessBounds(const HighsOptions& options, const char* type,
                          const HighsInt ml_ix_os,
                          const HighsIndexCollection& index_collection,
                          vector<double>& lower, vector<double>& upper,
-                         const double infinite_bound) {
+                         const double infinite_bound,
+                         const HighsVarType* integrality) {
   HighsStatus return_status = HighsStatus::kOk;
   assert(ok(index_collection));
   HighsInt from_k;
@@ -421,6 +421,12 @@ HighsStatus assessBounds(const HighsOptions& options, const char* type,
     }
     // Check that the lower bound does not exceed the upper bound
     bool legalLowerUpperBound = lower[usr_ix] <= upper[usr_ix];
+    if (integrality) {
+      // Legal for semi-variables to have inconsistent bounds
+      if (integrality[usr_ix] == HighsVarType::kSemiContinuous ||
+          integrality[usr_ix] == HighsVarType::kSemiInteger)
+        legalLowerUpperBound = true;
+    }
     if (!legalLowerUpperBound) {
       // Leave inconsistent bounds to be used to deduce infeasibility
       highsLogUser(options.log_options, HighsLogType::kWarning,
@@ -474,32 +480,51 @@ HighsStatus assessBounds(const HighsOptions& options, const char* type,
 HighsStatus assessIntegrality(HighsLp& lp, const HighsOptions& options) {
   HighsStatus return_status = HighsStatus::kOk;
   if (!lp.integrality_.size()) return return_status;
-  assert(lp.integrality_.size() == lp.num_col_);
+  assert((HighsInt)lp.integrality_.size() == lp.num_col_);
   HighsInt num_illegal_lower = 0;
   HighsInt num_illegal_upper = 0;
   HighsInt num_modified_upper = 0;
+  HighsInt num_inconsistent_semi = 0;
   HighsInt num_non_semi = 0;
   HighsInt num_non_continuous_variables = 0;
   const double kLowerBoundMu = 10.0;
-  std::vector<HighsInt>& upper_bound_index =
-      lp.mods_.save_semi_variable_upper_bound_index;
-  std::vector<double>& upper_bound_value =
-      lp.mods_.save_semi_variable_upper_bound_value;
+  std::vector<HighsInt>& inconsistent_semi_variable_index =
+      lp.mods_.save_inconsistent_semi_variable_index;
+  std::vector<double>& inconsistent_semi_variable_lower_bound_value =
+      lp.mods_.save_inconsistent_semi_variable_lower_bound_value;
+  std::vector<double>& inconsistent_semi_variable_upper_bound_value =
+      lp.mods_.save_inconsistent_semi_variable_upper_bound_value;
+  std::vector<HighsVarType>& inconsistent_semi_variable_type =
+      lp.mods_.save_inconsistent_semi_variable_type;
 
+  std::vector<HighsInt>& tightened_semi_variable_upper_bound_index =
+      lp.mods_.save_tightened_semi_variable_upper_bound_index;
+  std::vector<double>& tightened_semi_variable_upper_bound_value =
+      lp.mods_.save_tightened_semi_variable_upper_bound_value;
+
+  assert(int(lp.mods_.save_inconsistent_semi_variable_index.size()) == 0);
   for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++) {
     if (lp.integrality_[iCol] == HighsVarType::kSemiContinuous ||
         lp.integrality_[iCol] == HighsVarType::kSemiInteger) {
-      // Semi-variables with zero lower bound aren't semi
+      if (lp.col_lower_[iCol] > lp.col_upper_[iCol]) {
+        // Semi-variables with inconsistent bounds become continous
+        // and fixed at zero
+        num_inconsistent_semi++;
+        inconsistent_semi_variable_index.push_back(iCol);
+        inconsistent_semi_variable_lower_bound_value.push_back(
+            lp.col_lower_[iCol]);
+        inconsistent_semi_variable_upper_bound_value.push_back(
+            lp.col_upper_[iCol]);
+        inconsistent_semi_variable_type.push_back(lp.integrality_[iCol]);
+        continue;
+      }
+      // Semi-variables with zero lower bound are not semi
       if (lp.col_lower_[iCol] == 0) {
         num_non_semi++;
-        if (lp.integrality_[iCol] == HighsVarType::kSemiContinuous) {
-          // Semi-continuous become continuous
-          lp.integrality_[iCol] = HighsVarType::kContinuous;
-        } else {
-          // Semi-integer become integer
-          lp.integrality_[iCol] = HighsVarType::kInteger;
+        lp.mods_.save_non_semi_variable_index.push_back(iCol);
+        // Semi-integer become integer so still have a non-continuous variable
+        if (lp.integrality_[iCol] == HighsVarType::kSemiInteger)
           num_non_continuous_variables++;
-        }
         continue;
       }
       if (lp.col_lower_[iCol] < 0) {
@@ -512,9 +537,10 @@ HighsStatus assessIntegrality(HighsLp& lp, const HighsOptions& options) {
         if (kLowerBoundMu * lp.col_lower_[iCol] > kMaxSemiVariableUpper) {
           num_illegal_upper++;
         } else {
-          // Record the upper bound change
-          upper_bound_index.push_back(iCol);
-          upper_bound_value.push_back(kMaxSemiVariableUpper);
+          // Record the upper bound change to be made later
+          tightened_semi_variable_upper_bound_index.push_back(iCol);
+          tightened_semi_variable_upper_bound_value.push_back(
+              kMaxSemiVariableUpper);
           num_modified_upper++;
         }
       }
@@ -522,6 +548,15 @@ HighsStatus assessIntegrality(HighsLp& lp, const HighsOptions& options) {
     } else if (lp.integrality_[iCol] == HighsVarType::kInteger) {
       num_non_continuous_variables++;
     }
+  }
+  if (num_inconsistent_semi) {
+    highsLogUser(
+        options.log_options, HighsLogType::kWarning,
+        "%" HIGHSINT_FORMAT
+        " semi-continuous/integer variable(s) have inconsistent bounds "
+        "so are fixed at zero\n",
+        num_inconsistent_semi);
+    return_status = HighsStatus::kWarning;
   }
   if (num_non_semi) {
     highsLogUser(options.log_options, HighsLogType::kWarning,
@@ -547,18 +582,52 @@ HighsStatus assessIntegrality(HighsLp& lp, const HighsOptions& options) {
                  kMaxSemiVariableUpper, kLowerBoundMu);
     return_status = HighsStatus::kWarning;
     if (has_illegal_bounds) {
-      // Don't apply upper bound modifications if there are illegal bounds
+      // Don't apply upper bound tightenings if there are illegal bounds
       assert(num_illegal_lower || num_illegal_upper);
-      upper_bound_index.clear();
-      upper_bound_value.clear();
+      tightened_semi_variable_upper_bound_index.clear();
+      tightened_semi_variable_upper_bound_value.clear();
     } else {
-      // Apply the upper bound modifications, saving the over-written
+      // Apply the upper bound tightenings, saving the over-written
       // values
       for (HighsInt k = 0; k < num_modified_upper; k++) {
-        const double use_upper_bound = upper_bound_value[k];
-        const HighsInt iCol = upper_bound_index[k];
-        upper_bound_value[k] = lp.col_upper_[iCol];
+        const double use_upper_bound =
+            tightened_semi_variable_upper_bound_value[k];
+        const HighsInt iCol = tightened_semi_variable_upper_bound_index[k];
+        tightened_semi_variable_upper_bound_value[k] = lp.col_upper_[iCol];
         lp.col_upper_[iCol] = use_upper_bound;
+      }
+    }
+  }
+  if (num_inconsistent_semi) {
+    if (has_illegal_bounds) {
+      // Don't apply bound changes if there are illegal bounds
+      inconsistent_semi_variable_index.clear();
+      inconsistent_semi_variable_lower_bound_value.clear();
+      inconsistent_semi_variable_upper_bound_value.clear();
+      inconsistent_semi_variable_type.clear();
+    } else {
+      for (HighsInt k = 0; k < num_inconsistent_semi; k++) {
+        const HighsInt iCol = inconsistent_semi_variable_index[k];
+        lp.col_lower_[iCol] = 0;
+        lp.col_upper_[iCol] = 0;
+        lp.integrality_[iCol] = HighsVarType::kContinuous;
+      }
+    }
+  }
+  if (num_non_semi) {
+    if (has_illegal_bounds) {
+      // Don't apply type changes if there are illegal bounds
+      lp.mods_.save_non_semi_variable_index.clear();
+    } else {
+      for (HighsInt k = 0; k < num_non_semi; k++) {
+        const HighsInt iCol = lp.mods_.save_non_semi_variable_index[k];
+        if (lp.integrality_[iCol] == HighsVarType::kSemiContinuous) {
+          // Semi-continuous become continuous
+          lp.integrality_[iCol] = HighsVarType::kContinuous;
+        } else {
+          // Semi-integer become integer
+          lp.integrality_[iCol] = HighsVarType::kInteger;
+        }
       }
     }
   }
@@ -587,18 +656,18 @@ void relaxSemiVariables(HighsLp& lp) {
   // and their upper bound, so have to modify the lower bound to be
   // zero
   if (!lp.integrality_.size()) return;
-  assert(lp.integrality_.size() == lp.num_col_);
+  assert((HighsInt)lp.integrality_.size() == lp.num_col_);
   HighsInt num_modified_lower = 0;
-  std::vector<HighsInt>& lower_bound_index =
-      lp.mods_.save_semi_variable_lower_bound_index;
-  std::vector<double>& lower_bound_value =
-      lp.mods_.save_semi_variable_lower_bound_value;
-  assert(lower_bound_index.size() == 0);
+  std::vector<HighsInt>& relaxed_semi_variable_lower_index =
+      lp.mods_.save_relaxed_semi_variable_lower_bound_index;
+  std::vector<double>& relaxed_semi_variable_lower_value =
+      lp.mods_.save_relaxed_semi_variable_lower_bound_value;
+  assert(relaxed_semi_variable_lower_index.size() == 0);
   for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++) {
     if (lp.integrality_[iCol] == HighsVarType::kSemiContinuous ||
         lp.integrality_[iCol] == HighsVarType::kSemiInteger) {
-      lower_bound_index.push_back(iCol);
-      lower_bound_value.push_back(lp.col_lower_[iCol]);
+      relaxed_semi_variable_lower_index.push_back(iCol);
+      relaxed_semi_variable_lower_value.push_back(lp.col_lower_[iCol]);
       lp.col_lower_[iCol] = 0;
     }
   }
@@ -606,14 +675,17 @@ void relaxSemiVariables(HighsLp& lp) {
 
 bool activeModifiedUpperBounds(const HighsOptions& options, const HighsLp& lp,
                                const std::vector<double> col_value) {
-  const std::vector<HighsInt>& upper_bound_index =
-      lp.mods_.save_semi_variable_upper_bound_index;
-  const HighsInt num_modified_upper = upper_bound_index.size();
+  const std::vector<HighsInt>& tightened_semi_variable_upper_bound_index =
+      lp.mods_.save_tightened_semi_variable_upper_bound_index;
+  const HighsInt num_modified_upper =
+      tightened_semi_variable_upper_bound_index.size();
   HighsInt num_active_modified_upper = 0;
   double min_semi_variable_margin = kHighsInf;
   for (HighsInt k = 0; k < num_modified_upper; k++) {
-    const double value = col_value[upper_bound_index[k]];
-    const double upper = lp.col_upper_[upper_bound_index[k]];
+    const double value =
+        col_value[tightened_semi_variable_upper_bound_index[k]];
+    const double upper =
+        lp.col_upper_[tightened_semi_variable_upper_bound_index[k]];
     double semi_variable_margin = upper - value;
     if (value > upper - options.primal_feasibility_tolerance) {
       min_semi_variable_margin = 0;
@@ -1278,9 +1350,6 @@ HighsStatus applyScalingToLpCol(HighsLp& lp, const HighsInt col,
   if (col >= lp.num_col_) return HighsStatus::kError;
   if (!colScale) return HighsStatus::kError;
 
-  for (HighsInt el = lp.a_matrix_.start_[col];
-       el < lp.a_matrix_.start_[col + 1]; el++)
-    lp.a_matrix_.value_[el] *= colScale;
   lp.a_matrix_.scaleCol(col, colScale);
   lp.col_cost_[col] *= colScale;
   if (colScale > 0) {
@@ -1300,19 +1369,13 @@ HighsStatus applyScalingToLpRow(HighsLp& lp, const HighsInt row,
   if (row >= lp.num_row_) return HighsStatus::kError;
   if (!rowScale) return HighsStatus::kError;
 
-  for (HighsInt col = 0; col < lp.num_col_; col++) {
-    for (HighsInt el = lp.a_matrix_.start_[col];
-         el < lp.a_matrix_.start_[col + 1]; el++) {
-      if (lp.a_matrix_.index_[el] == row) lp.a_matrix_.value_[el] *= rowScale;
-    }
-  }
   lp.a_matrix_.scaleRow(row, rowScale);
   if (rowScale > 0) {
-    lp.row_lower_[row] /= rowScale;
-    lp.row_upper_[row] /= rowScale;
+    lp.row_lower_[row] *= rowScale;
+    lp.row_upper_[row] *= rowScale;
   } else {
-    const double new_upper = lp.row_lower_[row] / rowScale;
-    lp.row_lower_[row] = lp.row_upper_[row] / rowScale;
+    const double new_upper = lp.row_lower_[row] * rowScale;
+    lp.row_lower_[row] = lp.row_upper_[row] * rowScale;
     lp.row_upper_[row] = new_upper;
   }
   return HighsStatus::kOk;
@@ -1883,12 +1946,12 @@ void reportLpColMatrix(const HighsLogOptions& log_options, const HighsLp& lp) {
     // With postitive number of rows, can assume that there are index and value
     // vectors to pass
     reportMatrix(log_options, "Column", lp.num_col_,
-                 lp.a_matrix_.start_[lp.num_col_], &lp.a_matrix_.start_[0],
-                 &lp.a_matrix_.index_[0], &lp.a_matrix_.value_[0]);
+                 lp.a_matrix_.start_[lp.num_col_], lp.a_matrix_.start_.data(),
+                 lp.a_matrix_.index_.data(), lp.a_matrix_.value_.data());
   } else {
     // With no rows, can's assume that there are index and value vectors to pass
     reportMatrix(log_options, "Column", lp.num_col_,
-                 lp.a_matrix_.start_[lp.num_col_], &lp.a_matrix_.start_[0],
+                 lp.a_matrix_.start_[lp.num_col_], lp.a_matrix_.start_.data(),
                  NULL, NULL);
   }
 }
@@ -1981,7 +2044,7 @@ HighsStatus readSolutionFile(const std::string filename,
                              HighsBasis& basis, HighsSolution& solution,
                              const HighsInt style) {
   const HighsLogOptions& log_options = options.log_options;
-  if (style != kSolutionStyleRaw) {
+  if (style != kSolutionStyleRaw && style != kSolutionStyleSparse) {
     highsLogUser(log_options, HighsLogType::kError,
                  "readSolutionFile: Cannot read file of style %d\n",
                  (int)style);
@@ -2037,25 +2100,57 @@ HighsStatus readSolutionFile(const std::string filename,
   if (!readSolutionFileHashKeywordIntLineOk(keyword, num_col, in_file))
     return readSolutionFileErrorReturn(in_file);
   assert(keyword == "Columns");
-  if (num_col != lp_num_col) {
-    highsLogUser(log_options, HighsLogType::kError,
-                 "readSolutionFile: Solution file is for %" HIGHSINT_FORMAT
-                 " columns, not %" HIGHSINT_FORMAT "\n",
-                 num_col, lp_num_col);
-    return readSolutionFileErrorReturn(in_file);
+  // The default style parameter is kSolutionStyleRaw, and this still
+  // allows sparse files to be read. Recognise the latter from num_col
+  // <= 0. Doesn't matter if num_col = 0, sinc ethere's nothing to
+  // read either way
+  const bool sparse = num_col <= 0;
+  if (style == kSolutionStyleSparse) assert(sparse);
+  if (sparse) {
+    num_col = -num_col;
+  } else {
+    if (num_col != lp_num_col) {
+      highsLogUser(log_options, HighsLogType::kError,
+                   "readSolutionFile: Solution file is for %" HIGHSINT_FORMAT
+                   " columns, not %" HIGHSINT_FORMAT "\n",
+                   num_col, lp_num_col);
+      return readSolutionFileErrorReturn(in_file);
+    }
   }
   double value;
-  for (HighsInt iCol = 0; iCol < num_col; iCol++) {
-    if (!readSolutionFileIdDoubleLineOk(value, in_file))
-      return readSolutionFileErrorReturn(in_file);
-    read_solution.col_value[iCol] = value;
+  if (sparse) {
+    read_solution.col_value.assign(lp_num_col, 0);
+    HighsInt iCol;
+    for (HighsInt iX = 0; iX < num_col; iX++) {
+      if (!readSolutionFileIdDoubleIntLineOk(value, iCol, in_file))
+        return readSolutionFileErrorReturn(in_file);
+      read_solution.col_value[iCol] = value;
+    }
+  } else {
+    for (HighsInt iCol = 0; iCol < num_col; iCol++) {
+      if (!readSolutionFileIdDoubleLineOk(value, in_file))
+        return readSolutionFileErrorReturn(in_file);
+      read_solution.col_value[iCol] = value;
+    }
   }
   read_solution.value_valid = true;
-  // Read in the col values: OK to have none, otherwise next line
-  // should be "Rows" and correct number
-  if (!readSolutionFileHashKeywordIntLineOk(keyword, num_row, in_file))
+  if (sparse) {
+    if (calculateRowValues(lp, read_solution.col_value,
+                           read_solution.row_value) != HighsStatus::kOk)
+      return readSolutionFileErrorReturn(in_file);
     return readSolutionFileReturn(HighsStatus::kOk, solution, basis,
                                   read_solution, read_basis, in_file);
+  }
+  // Read in the col values: OK to have none, otherwise next line
+  // should be "Rows" and correct number
+  if (!readSolutionFileHashKeywordIntLineOk(keyword, num_row, in_file)) {
+    // Compute the row values since there are none to read
+    if (calculateRowValues(lp, read_solution.col_value,
+                           read_solution.row_value) != HighsStatus::kOk)
+      return readSolutionFileErrorReturn(in_file);
+    return readSolutionFileReturn(HighsStatus::kOk, solution, basis,
+                                  read_solution, read_basis, in_file);
+  }
   assert(keyword == "Rows");
   if (num_row != lp_num_row) {
     highsLogUser(log_options, HighsLogType::kError,
@@ -2188,9 +2283,25 @@ bool readSolutionFileIdDoubleLineOk(double& value, std::ifstream& in_file) {
   return true;
 }
 
-HighsStatus checkLpSolutionFeasibility(const HighsOptions& options,
-                                       const HighsLp& lp,
-                                       const HighsSolution& solution) {
+bool readSolutionFileIdDoubleIntLineOk(double& value, HighsInt& index,
+                                       std::ifstream& in_file) {
+  std::string id;
+  if (in_file.eof()) return false;
+  in_file >> id;  // Id
+  if (in_file.eof()) return false;
+  in_file >> value;  // double value
+  if (in_file.eof()) return false;
+  in_file >> index;  // double value
+  return true;
+}
+
+HighsStatus assessLpPrimalSolution(const HighsOptions& options,
+                                   const HighsLp& lp,
+                                   const HighsSolution& solution, bool& valid,
+                                   bool& integral, bool& feasible) {
+  valid = false;
+  integral = false;
+  feasible = false;
   HighsInt num_col_infeasibilities = 0;
   double max_col_infeasibility = 0;
   double sum_col_infeasibilities = 0;
@@ -2203,7 +2314,8 @@ HighsStatus checkLpSolutionFeasibility(const HighsOptions& options,
   HighsInt num_row_residuals = 0;
   double max_row_residual = 0;
   double sum_row_residuals = 0;
-  const double kRowResidualTolerance = 1e-12;
+  const double kRowResidualTolerance =
+      options.primal_feasibility_tolerance;  // 1e-12;
   vector<double> row_value;
   row_value.assign(lp.num_row_, 0);
   const bool have_integrality = lp.integrality_.size();
@@ -2223,8 +2335,8 @@ HighsStatus checkLpSolutionFeasibility(const HighsOptions& options,
     }
     double integer_infeasibility = 0;
     if (type == HighsVarType::kInteger || type == HighsVarType::kSemiInteger) {
-      double nearest_integer = std::round(primal);
-      double integer_infeasibility = std::fabs(primal - nearest_integer);
+      double nearest_integer = std::floor(primal + 0.5);
+      integer_infeasibility = std::fabs(primal - nearest_integer);
     }
     if (col_infeasibility > 0 && (type == HighsVarType::kSemiContinuous ||
                                   type == HighsVarType::kSemiInteger)) {
@@ -2232,12 +2344,18 @@ HighsStatus checkLpSolutionFeasibility(const HighsOptions& options,
       // infeasibility, so possibly zero this
       if (std::fabs(primal) <= options.mip_feasibility_tolerance)
         col_infeasibility = 0;
+      // If there is (still) column infeasibility due to value being
+      // off zero or below lower bound, then this counts as an integer
+      // infeasibility
+      if (col_infeasibility && primal < upper)
+        integer_infeasibility =
+            std::max(col_infeasibility, integer_infeasibility);
     }
     if (col_infeasibility > 0) {
       if (col_infeasibility > options.primal_feasibility_tolerance) {
         if (col_infeasibility > 2 * max_col_infeasibility)
           highsLogUser(options.log_options, HighsLogType::kWarning,
-                       "Col %6d has         infeasiblilty of %11.4g from "
+                       "Col %6d has         infeasibility of %11.4g from "
                        "[lower, value, upper] = [%15.8g; %15.8g; %15.8g]\n",
                        (int)iCol, col_infeasibility, lower, primal, upper);
         num_col_infeasibilities++;
@@ -2250,7 +2368,7 @@ HighsStatus checkLpSolutionFeasibility(const HighsOptions& options,
       if (integer_infeasibility > options.mip_feasibility_tolerance) {
         if (integer_infeasibility > 2 * max_integer_infeasibility)
           highsLogUser(options.log_options, HighsLogType::kWarning,
-                       "Col %6d has integer infeasiblilty of %11.4g\n",
+                       "Col %6d has integer infeasibility of %11.4g\n",
                        (int)iCol, integer_infeasibility);
         num_integer_infeasibilities++;
       }
@@ -2277,7 +2395,7 @@ HighsStatus checkLpSolutionFeasibility(const HighsOptions& options,
       if (row_infeasibility > options.primal_feasibility_tolerance) {
         if (row_infeasibility > 2 * max_row_infeasibility)
           highsLogUser(options.log_options, HighsLogType::kWarning,
-                       "Row %6d has         infeasiblilty of %11.4g from "
+                       "Row %6d has         infeasibility of %11.4g from "
                        "[lower, value, upper] = [%15.8g; %15.8g; %15.8g]\n",
                        (int)iRow, row_infeasibility, lower, primal, upper);
         num_row_infeasibilities++;
@@ -2316,9 +2434,11 @@ HighsStatus checkLpSolutionFeasibility(const HighsOptions& options,
   highsLogUser(options.log_options, HighsLogType::kInfo,
                "Row     residuals       %6d  %11.4g  %11.4g\n",
                (int)num_row_residuals, max_row_residual, sum_row_residuals);
-  if (num_col_infeasibilities || num_integer_infeasibilities ||
-      num_row_infeasibilities)
-    return HighsStatus::kWarning;
+  valid = num_row_residuals == 0;
+  integral = valid && num_integer_infeasibilities == 0;
+  feasible = valid && num_col_infeasibilities == 0 &&
+             num_integer_infeasibilities == 0 && num_row_infeasibilities == 0;
+  if (!(integral && feasible)) return HighsStatus::kWarning;
   return HighsStatus::kOk;
 }
 
@@ -2500,8 +2620,16 @@ HighsStatus calculateRowValuesQuad(const HighsLp& lp, HighsSolution& solution) {
 
 bool isBoundInfeasible(const HighsLogOptions& log_options, const HighsLp& lp) {
   HighsInt num_bound_infeasible = 0;
-  for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++)
+  const bool has_integrality = lp.integrality_.size() > 0;
+  for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++) {
+    if (has_integrality) {
+      // Semi-variables can have inconsistent bounds
+      if (lp.integrality_[iCol] == HighsVarType::kSemiContinuous ||
+          lp.integrality_[iCol] == HighsVarType::kSemiInteger)
+        continue;
+    }
     if (lp.col_upper_[iCol] < lp.col_lower_[iCol]) num_bound_infeasible++;
+  }
   for (HighsInt iRow = 0; iRow < lp.num_row_; iRow++)
     if (lp.row_upper_[iRow] < lp.row_lower_[iRow]) num_bound_infeasible++;
   if (num_bound_infeasible > 0)
@@ -2715,7 +2843,15 @@ HighsLp withoutSemiVariables(const HighsLp& lp_, HighsSolution& solution,
   const bool has_col_names = lp.col_names_.size();
   const bool has_row_names = lp.row_names_.size();
   const bool has_solution = solution.value_valid;
-  if (has_solution) assert(solution.col_value.size() == lp_.num_col_);
+  if (has_solution) {
+    // Create zeroed row values for the new rows
+    assert((HighsInt)solution.row_value.size() == lp_.num_row_);
+    for (HighsInt iCol = 0; iCol < 2 * num_semi_variables; iCol++)
+      solution.row_value.push_back(0);
+    assert((HighsInt)solution.col_value.size() == lp_.num_col_);
+    assert((HighsInt)solution.row_value.size() ==
+           lp_.num_row_ + 2 * num_semi_variables);
+  }
   for (HighsInt iCol = 0; iCol < num_col; iCol++) {
     if (lp.integrality_[iCol] == HighsVarType::kSemiContinuous ||
         lp.integrality_[iCol] == HighsVarType::kSemiInteger) {
@@ -2742,6 +2878,9 @@ HighsLp withoutSemiVariables(const HighsLp& lp_, HighsSolution& solution,
       value.push_back(-lp.col_lower_[iCol]);
       // Accommodate any primal solution
       if (has_solution) {
+        // Record the previous solution value so any change can be
+        // determined
+        const double prev_primal = solution.col_value[iCol];
         if (solution.col_value[iCol] <= primal_feasibility_tolerance) {
           // Currently at or below zero, so binary is 0
           solution.col_value[iCol] = 0;
@@ -2753,6 +2892,21 @@ HighsLp withoutSemiVariables(const HighsLp& lp_, HighsSolution& solution,
               std::max(lp.col_lower_[iCol], solution.col_value[iCol]);
           solution.col_value.push_back(1);
         }
+        const double dl_primal = solution.col_value[iCol] - prev_primal;
+        if (dl_primal) {
+          // Change in primal value, so update row values. NB start
+          // has been extended to incorporate the values in this
+          // column for the new rows. Their solution values are zero,
+          // but will be set later
+          for (HighsInt iEl = start[iCol]; iEl < start[iCol + 1]; iEl++)
+            solution.row_value[index[iEl]] += dl_primal * value[iEl];
+        }
+        const HighsInt new_col = lp.col_cost_.size() - 1;
+        const double binary_value = solution.col_value[new_col];
+        solution.row_value[row_num - 1] =
+            solution.col_value[iCol] - lp.col_lower_[iCol] * binary_value;
+        solution.row_value[row_num] =
+            solution.col_value[iCol] - lp.col_upper_[iCol] * binary_value;
       }
       // Complete x - u*y <= 0
       lp.row_lower_.push_back(-kHighsInf);
@@ -2773,16 +2927,16 @@ HighsLp withoutSemiVariables(const HighsLp& lp_, HighsSolution& solution,
       } else if (lp.integrality_[iCol] == HighsVarType::kSemiInteger) {
         lp.integrality_[iCol] = HighsVarType::kInteger;
       }
-      // Change the lower bound to on the semi-variable to
-      // zero. Cannot do this earlier, as its original value is used
-      // in constraint 0 <= x-l*y
+      // Change the lower bound on the semi-variable to zero. Cannot
+      // do this earlier, as its original value is used in constraint
+      // 0 <= x-l*y
       lp.col_lower_[iCol] = 0;
     }
   }
   num_col += num_semi_variables;
   lp.num_col_ += num_semi_variables;
   lp.num_row_ += 2 * num_semi_variables;
-  assert(index.size() == new_num_nz);
+  assert((HighsInt)index.size() == new_num_nz);
   // Clear any modifications inherited from lp_
   lp.mods_.clear();
   return lp;

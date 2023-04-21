@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -167,7 +165,7 @@ void HighsCutPool::performAging() {
     }
   }
 
-  assert(propRows.size() == numPropRows);
+  assert((HighsInt)propRows.size() == numPropRows);
 }
 
 void HighsCutPool::separate(const std::vector<double>& sol, HighsDomain& domain,
@@ -274,7 +272,7 @@ void HighsCutPool::separate(const std::vector<double>& sol, HighsDomain& domain,
 
     efficacious_cuts.emplace_back(score, i);
   }
-  assert(propRows.size() == numPropRows);
+  assert((HighsInt)propRows.size() == numPropRows);
   if (efficacious_cuts.empty()) return;
 
   pdqsort(efficacious_cuts.begin(), efficacious_cuts.end(),
@@ -364,7 +362,7 @@ void HighsCutPool::separate(const std::vector<double>& sol, HighsDomain& domain,
     }
   }
 
-  assert(propRows.size() == numPropRows);
+  assert((HighsInt)propRows.size() == numPropRows);
   cutset.ARstart_[cutset.numCuts()] = offset;
 }
 
@@ -404,7 +402,7 @@ void HighsCutPool::separateLpCutsAfterRestart(HighsCutSet& cutset) {
 
   cutset.ARstart_[cutset.numCuts()] = offset;
 
-  assert(propRows.size() == numPropRows);
+  assert((HighsInt)propRows.size() == numPropRows);
 }
 
 HighsInt HighsCutPool::addCut(const HighsMipSolver& mipsolver, HighsInt* Rindex,
@@ -511,7 +509,7 @@ HighsInt HighsCutPool::addCut(const HighsMipSolver& mipsolver, HighsInt* Rindex,
   ++ageDistribution[ages_[rowindex]];
   rowintegral[rowindex] = integral;
   if (propagate) propRows.emplace(ages_[rowindex], rowindex);
-  assert(propRows.size() == numPropRows);
+  assert((HighsInt)propRows.size() == numPropRows);
 
   rownormalization_[rowindex] = normalization;
   maxabscoef_[rowindex] = maxabscoef;

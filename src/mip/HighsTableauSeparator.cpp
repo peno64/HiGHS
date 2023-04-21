@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /**@file mip/HighsTableauSeparator.cpp
@@ -102,7 +100,7 @@ void HighsTableauSeparator::separateLpSolution(HighsLpRelaxation& lpRelaxation,
                      std::min(numRow,
                               (HighsInt)mip.mipdata_->integral_cols.size()))});
 
-  if (fractionalBasisvars.size() > maxTries) {
+  if ((HighsInt)fractionalBasisvars.size() > maxTries) {
     const double* edgeWt = lpRelaxation.getLpSolver().getDualEdgeWeights();
     if (edgeWt) {
       // printf("choosing %ld/%zu with DSE weights\n", maxTries,
@@ -216,7 +214,7 @@ void HighsTableauSeparator::separateLpSolution(HighsLpRelaxation& lpRelaxation,
     }
 
     HighsInt len = baseRowInds.size();
-    if (len > fracvar.row_ep.size()) {
+    if (len > (HighsInt)fracvar.row_ep.size()) {
       double maxAbsVal = 0.0;
       double minAbsVal = kHighsInf;
       for (HighsInt i = 0; i < len; ++i) {

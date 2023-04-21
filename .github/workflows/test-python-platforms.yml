@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python: [3.6, 3.7, 3.8, 3.9]
+        python: [3.7, 3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v3
@@ -50,5 +50,5 @@ jobs:
         shell: bash
         working-directory: ${{runner.workspace}}
         run: |
-          pip install -e ./HiGHS/src/interfaces/highspy/
-          nosetests -v ./HiGHS/src/interfaces/highspy/
+          pip install -e ./HiGHS
+          nosetests -v ./HiGHS

@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "mip/HighsDomain.h"
@@ -1108,7 +1106,7 @@ void HighsDomain::ObjectivePropagation::propagate() {
   debugCheckObjectiveLower();
 
   const double upperLimit = domain->mipsolver->mipdata_->upper_limit;
-  if (objectiveLower > upperLimit) {
+  if (numInfObjLower == 0 && objectiveLower > upperLimit) {
     domain->infeasible_ = true;
     domain->infeasible_pos = domain->domchgstack_.size();
     domain->infeasible_reason = Reason::objective();
@@ -2999,7 +2997,8 @@ bool HighsDomain::ConflictSet::resolveLinearGeq(HighsCDouble M, double Mupper,
       M += reasonDomchg.delta;
       resolvedDomainChanges.push_back(locdomchg);
       assert(resolvedDomainChanges.back().pos >= 0);
-      assert(resolvedDomainChanges.back().pos < localdom.domchgstack_.size());
+      assert(resolvedDomainChanges.back().pos <
+             (HighsInt)localdom.domchgstack_.size());
       covered = double(M - Mupper);
       if (covered <= 0) break;
     }
@@ -3107,7 +3106,8 @@ bool HighsDomain::ConflictSet::resolveLinearLeq(HighsCDouble M, double Mlower,
       M += reasonDomchg.delta;
       resolvedDomainChanges.push_back(locdomchg);
       assert(resolvedDomainChanges.back().pos >= 0);
-      assert(resolvedDomainChanges.back().pos < localdom.domchgstack_.size());
+      assert(resolvedDomainChanges.back().pos <
+             (HighsInt)localdom.domchgstack_.size());
       covered = double(M - Mlower);
       if (covered >= 0) break;
     }
@@ -3482,12 +3482,14 @@ bool HighsDomain::ConflictSet::explainBoundChange(
       HighsInt boundPos;
       if (val) {
         assert(localdom.colLowerPos_[col] >= 0);
-        assert(localdom.colLowerPos_[col] < localdom.domchgstack_.size());
+        assert(localdom.colLowerPos_[col] <
+               (HighsInt)localdom.domchgstack_.size());
 
         localdom.getColLowerPos(col, domchg.pos, boundPos);
       } else {
         assert(localdom.colUpperPos_[col] >= 0);
-        assert(localdom.colUpperPos_[col] < localdom.domchgstack_.size());
+        assert(localdom.colUpperPos_[col] <
+               (HighsInt)localdom.domchgstack_.size());
 
         localdom.getColUpperPos(col, domchg.pos, boundPos);
       }
@@ -3706,7 +3708,7 @@ HighsInt HighsDomain::ConflictSet::resolveDepth(std::set<LocalDomChg>& frontier,
   LocalDomChg startPos =
       LocalDomChg{depthLevel == 0 ? 0 : localdom.branchPos_[depthLevel - 1] + 1,
                   HighsDomainChange()};
-  while (depthLevel < localdom.branchPos_.size()) {
+  while (depthLevel < (HighsInt)localdom.branchPos_.size()) {
     HighsInt branchPos = localdom.branchPos_[depthLevel];
     if (localdom.domchgstack_[branchPos].boundval !=
         localdom.prevboundval_[branchPos].first)
@@ -3716,7 +3718,7 @@ HighsInt HighsDomain::ConflictSet::resolveDepth(std::set<LocalDomChg>& frontier,
   }
 
   auto iterEnd =
-      depthLevel == localdom.branchPos_.size()
+      depthLevel == (HighsInt)localdom.branchPos_.size()
           ? frontier.end()
           : frontier.upper_bound(LocalDomChg{localdom.branchPos_[depthLevel],
                                              HighsDomainChange()});
@@ -3781,9 +3783,9 @@ HighsInt HighsDomain::ConflictSet::resolveDepth(std::set<LocalDomChg>& frontier,
 
 HighsInt HighsDomain::ConflictSet::computeCuts(
     HighsInt depthLevel, HighsConflictPool& conflictPool) {
-  HighsInt numResolved =
-      resolveDepth(reasonSideFrontier, depthLevel, 1,
-                   depthLevel == localdom.branchPos_.size() ? 1 : 0, true);
+  HighsInt numResolved = resolveDepth(
+      reasonSideFrontier, depthLevel, 1,
+      depthLevel == (HighsInt)localdom.branchPos_.size() ? 1 : 0, true);
   if (numResolved == -1) return -1;
   HighsInt numConflicts = 0;
   if (numResolved > 0) {

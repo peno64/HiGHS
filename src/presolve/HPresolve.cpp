@@ -2,12 +2,10 @@
 /*                                                                       */
 /*    This file is part of the HiGHS linear optimization suite           */
 /*                                                                       */
-/*    Written and engineered 2008-2022 at the University of Edinburgh    */
+/*    Written and engineered 2008-2023 by Julian Hall, Ivet Galabova,    */
+/*    Leona Gottwald and Michael Feldmeier                               */
 /*                                                                       */
 /*    Available as open-source under the MIT License                     */
-/*                                                                       */
-/*    Authors: Julian Hall, Ivet Galabova, Leona Gottwald and Michael    */
-/*    Feldmeier                                                          */
 /*                                                                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "presolve/HPresolve.h"
@@ -1336,7 +1334,7 @@ HPresolve::Result HPresolve::runProbing(HighsPostsolveStack& postsolve_stack) {
                       implications.substitutions.size() +
                       cliquetable.getSubstitutions().size();
     int64_t splayContingent =
-        cliquetable.numNeighborhoodQueries +
+        cliquetable.numNeighbourhoodQueries +
         std::max(mipsolver->submip ? HighsInt{0} : HighsInt{100000},
                  10 * numNonzeros());
     HighsInt numFail = 0;
@@ -1368,11 +1366,11 @@ HPresolve::Result HPresolve::runProbing(HighsPostsolveStack& postsolve_stack) {
         // if (numProbed % 10 == 0)
         //   printf(
         //       "numprobed=%d  numDel=%d  newcliques=%d "
-        //       "numNeighborhoodQueries=%ld  "
+        //       "numNeighbourhoodQueries=%ld  "
         //       "splayContingent=%ld\n",
         //       numProbed, numDel, cliquetable.numCliques() - numCliquesStart,
-        //       cliquetable.numNeighborhoodQueries, splayContingent);
-        if (cliquetable.numNeighborhoodQueries > splayContingent) break;
+        //       cliquetable.numNeighbourhoodQueries, splayContingent);
+        if (cliquetable.numNeighbourhoodQueries > splayContingent) break;
 
         if (probingContingent - numProbed < 0) break;
 
@@ -2730,11 +2728,12 @@ HPresolve::Result HPresolve::singletonCol(HighsPostsolveStack& postsolve_stack,
                analysis_.allow_rule_[kPresolveRuleForcingCol]) {
       // todo: forcing column, since this implies colDual >= 0 and we
       // already checked that colDual <= 0 and since the cost are 0.0
-      // all the rows are at a dual multiplier of zero and we can determine
-      // one nonbasic row in postsolve, and make the other rows and the column
-      // basic. The columns primal value is computed from the non-basic row
-      // which is chosen such that the values of all rows are primal feasible
-      // printf("removing forcing column of size %" HIGHSINT_FORMAT "\n",
+      // all the rows are at a dual multiplier of zero and we can
+      // determine one nonbasic row in postsolve, and make the other
+      // rows and the column basic. The columns primal value is
+      // computed from the nonbasic row which is chosen such that the
+      // values of all rows are primal feasible printf("removing
+      // forcing column of size %" HIGHSINT_FORMAT "\n",
       // colsize[col]);
       if (logging_on) analysis_.startPresolveRuleLog(kPresolveRuleForcingCol);
       postsolve_stack.forcingColumn(col, getColumnVector(col),
@@ -3188,15 +3187,26 @@ HPresolve::Result HPresolve::rowPresolve(HighsPostsolveStack& postsolve_stack,
                                            primal_feastol);
 
                 if (zLower == zUpper) {
-                  // rounded bounds are equal, so fix x1 to the corresponding
-                  // bound
+                  // Rounded bounds are equal
+                  //
+                  // Adjust bounds if variable is fixed to a value in between
+                  // its bounds
                   double fixVal = zLower * d + b;
+                  assert(fixVal > model->col_lower_[x1] - primal_feastol);
+                  assert(fixVal < model->col_upper_[x1] + primal_feastol);
+                  if (fixVal > model->col_lower_[x1])
+                    changeColLower(x1, fixVal);
+                  if (fixVal < model->col_upper_[x1])
+                    changeColUpper(x1, fixVal);
+                  // Fix variable
                   if (std::abs(model->col_lower_[x1] - fixVal) <=
-                      primal_feastol)
+                      primal_feastol) {
                     fixColToLower(postsolve_stack, x1);
-                  else
+                  } else {
+                    assert(std::abs(model->col_upper_[x1] - fixVal) <=
+                           primal_feastol);
                     fixColToUpper(postsolve_stack, x1);
-
+                  }
                   rowpositions.erase(rowpositions.begin() + x1Cand);
                 } else {
                   transformColumn(postsolve_stack, x1, d, b);
@@ -3614,6 +3624,19 @@ HPresolve::Result HPresolve::rowPresolve(HighsPostsolveStack& postsolve_stack,
         markRowDeleted(row);
         for (const HighsSliceNonzero& nonzero : rowVector) {
           if (nonzero.value() < 0) {
+            if (model->integrality_[nonzero.index()] !=
+                HighsVarType::kContinuous) {
+              // If a non-continuous variable is fixed at a fractional
+              // value then the problem is infeasible
+              const double upper = model->col_upper_[nonzero.index()];
+              const double fraction = upper - std::floor(upper);
+              assert(fraction >= 0);
+              const bool non_fractional =
+                  fraction <=
+                  mipsolver->options_mip_->mip_feasibility_tolerance;
+              //	      assert(non_fractional);
+              if (!non_fractional) return Result::kPrimalInfeasible;
+            }
             postsolve_stack.fixedColAtUpper(nonzero.index(),
                                             model->col_upper_[nonzero.index()],
                                             model->col_cost_[nonzero.index()],
@@ -3625,6 +3648,19 @@ HPresolve::Result HPresolve::rowPresolve(HighsPostsolveStack& postsolve_stack,
 
             removeFixedCol(nonzero.index());
           } else {
+            if (model->integrality_[nonzero.index()] !=
+                HighsVarType::kContinuous) {
+              // If a non-continuous variable is fixed at a fractional
+              // value then the problem is infeasible
+              const double lower = model->col_lower_[nonzero.index()];
+              const double fraction = std::ceil(lower) - lower;
+              assert(fraction >= 0);
+              const bool non_fractional =
+                  fraction <=
+                  mipsolver->options_mip_->mip_feasibility_tolerance;
+              //	      assert(non_fractional);
+              if (!non_fractional) return Result::kPrimalInfeasible;
+            }
             postsolve_stack.fixedColAtLower(nonzero.index(),
                                             model->col_lower_[nonzero.index()],
                                             model->col_cost_[nonzero.index()],
@@ -4380,92 +4416,93 @@ HPresolve::Result HPresolve::removeDependentEquations(
 
 HPresolve::Result HPresolve::removeDependentFreeCols(
     HighsPostsolveStack& postsolve_stack) {
-  assert(analysis_.allow_rule_[kPresolveRuleDependentFreeCols]);
-  const bool logging_on = analysis_.logging_on_;
   return Result::kOk;
 
-  if (logging_on)
-    analysis_.startPresolveRuleLog(kPresolveRuleDependentFreeCols);
-
-  // todo the postsolve step does not work properly
-  std::vector<HighsInt> freeCols;
-  freeCols.reserve(model->num_col_);
-
-  for (HighsInt i = 0; i < model->num_col_; ++i) {
-    if (colDeleted[i]) continue;
-    if (model->col_lower_[i] == -kHighsInf && model->col_upper_[i] == kHighsInf)
-      freeCols.push_back(i);
-  }
-
-  if (freeCols.empty()) return Result::kOk;
-
-  HighsSparseMatrix matrix;
-  matrix.num_col_ = freeCols.size();
-  highsLogDev(options->log_options, HighsLogType::kInfo,
-              "HPresolve::removeDependentFreeCols Got %d free cols, checking "
-              "for dependent free cols\n",
-              (int)matrix.num_col_);
-  matrix.num_row_ = model->num_row_ + 1;
-  matrix.start_.resize(matrix.num_col_ + 1);
-  matrix.start_[0] = 0;
-  const HighsInt maxCapacity = numNonzeros() + matrix.num_col_;
-  matrix.value_.reserve(maxCapacity);
-  matrix.index_.reserve(maxCapacity);
-
-  for (HighsInt i = 0; i < matrix.num_col_; ++i) {
-    HighsInt col = freeCols[i];
-    // add entries of free column
-    for (const HighsSliceNonzero& nonz : getColumnVector(col)) {
-      matrix.value_.push_back(nonz.value());
-      matrix.index_.push_back(nonz.index());
-    }
-
-    // add entry for artifical cost row
-    if (model->col_cost_[col] != 0.0) {
-      matrix.value_.push_back(model->col_cost_[col]);
-      matrix.index_.push_back(model->num_row_);
-    }
-
-    matrix.start_[i + 1] = matrix.value_.size();
-  }
-  std::vector<HighsInt> colSet(matrix.num_col_);
-  std::iota(colSet.begin(), colSet.end(), 0);
-  HFactor factor;
-  factor.setup(matrix, colSet);
-  HighsInt rank_deficiency = factor.build();
-  // Must not have timed out
-  assert(rank_deficiency >= 0);
-  highsLogDev(options->log_options, HighsLogType::kInfo,
-              "HPresolve::removeDependentFreeCols Got %d free cols, checking "
-              "for dependent free cols\n",
-              (int)matrix.num_col_);
-  // Analyse what's been removed
-  HighsInt num_removed_row = 0;
-  HighsInt num_removed_nz = 0;
-  HighsInt num_fictitious_cols_skipped = 0;
-  for (HighsInt k = 0; k < rank_deficiency; k++) {
-    if (factor.var_with_no_pivot[k] >= 0) {
-      HighsInt redundant_col = freeCols[factor.var_with_no_pivot[k]];
-      num_removed_nz += colsize[redundant_col];
-      fixColToZero(postsolve_stack, redundant_col);
-    } else {
-      num_fictitious_cols_skipped++;
-    }
-  }
-  highsLogDev(
-      options->log_options, HighsLogType::kInfo,
-      "HPresolve::removeDependentFreeCols Removed %d rows and %d nonzeros",
-      (int)num_removed_row, (int)num_removed_nz);
-  if (num_fictitious_cols_skipped)
-    highsLogDev(options->log_options, HighsLogType::kInfo,
-                ", avoiding %d fictitious rows",
-                (int)num_fictitious_cols_skipped);
-  highsLogDev(options->log_options, HighsLogType::kInfo, "\n");
-
-  analysis_.logging_on_ = logging_on;
-  if (logging_on) analysis_.stopPresolveRuleLog(kPresolveRuleDependentFreeCols);
-
-  return Result::kOk;
+  // Commented out unreachable code
+  //  assert(analysis_.allow_rule_[kPresolveRuleDependentFreeCols]);
+  //  const bool logging_on = analysis_.logging_on_;
+  //  if (logging_on)
+  //    analysis_.startPresolveRuleLog(kPresolveRuleDependentFreeCols);
+  //
+  //  // todo the postsolve step does not work properly
+  //  std::vector<HighsInt> freeCols;
+  //  freeCols.reserve(model->num_col_);
+  //
+  //  for (HighsInt i = 0; i < model->num_col_; ++i) {
+  //    if (colDeleted[i]) continue;
+  //    if (model->col_lower_[i] == -kHighsInf && model->col_upper_[i] ==
+  //    kHighsInf)
+  //      freeCols.push_back(i);
+  //  }
+  //
+  //  if (freeCols.empty()) return Result::kOk;
+  //
+  //  HighsSparseMatrix matrix;
+  //  matrix.num_col_ = freeCols.size();
+  //  highsLogDev(options->log_options, HighsLogType::kInfo,
+  //              "HPresolve::removeDependentFreeCols Got %d free cols, checking
+  //              " "for dependent free cols\n", (int)matrix.num_col_);
+  //  matrix.num_row_ = model->num_row_ + 1;
+  //  matrix.start_.resize(matrix.num_col_ + 1);
+  //  matrix.start_[0] = 0;
+  //  const HighsInt maxCapacity = numNonzeros() + matrix.num_col_;
+  //  matrix.value_.reserve(maxCapacity);
+  //  matrix.index_.reserve(maxCapacity);
+  //
+  //  for (HighsInt i = 0; i < matrix.num_col_; ++i) {
+  //    HighsInt col = freeCols[i];
+  //    // add entries of free column
+  //    for (const HighsSliceNonzero& nonz : getColumnVector(col)) {
+  //      matrix.value_.push_back(nonz.value());
+  //      matrix.index_.push_back(nonz.index());
+  //    }
+  //
+  //    // add entry for artifical cost row
+  //    if (model->col_cost_[col] != 0.0) {
+  //      matrix.value_.push_back(model->col_cost_[col]);
+  //      matrix.index_.push_back(model->num_row_);
+  //    }
+  //
+  //    matrix.start_[i + 1] = matrix.value_.size();
+  //  }
+  //  std::vector<HighsInt> colSet(matrix.num_col_);
+  //  std::iota(colSet.begin(), colSet.end(), 0);
+  //  HFactor factor;
+  //  factor.setup(matrix, colSet);
+  //  HighsInt rank_deficiency = factor.build();
+  //  // Must not have timed out
+  //  assert(rank_deficiency >= 0);
+  //  highsLogDev(options->log_options, HighsLogType::kInfo,
+  //              "HPresolve::removeDependentFreeCols Got %d free cols, checking
+  //              " "for dependent free cols\n", (int)matrix.num_col_);
+  //  // Analyse what's been removed
+  //  HighsInt num_removed_row = 0;
+  //  HighsInt num_removed_nz = 0;
+  //  HighsInt num_fictitious_cols_skipped = 0;
+  //  for (HighsInt k = 0; k < rank_deficiency; k++) {
+  //    if (factor.var_with_no_pivot[k] >= 0) {
+  //      HighsInt redundant_col = freeCols[factor.var_with_no_pivot[k]];
+  //      num_removed_nz += colsize[redundant_col];
+  //      fixColToZero(postsolve_stack, redundant_col);
+  //    } else {
+  //      num_fictitious_cols_skipped++;
+  //    }
+  //  }
+  //  highsLogDev(
+  //      options->log_options, HighsLogType::kInfo,
+  //      "HPresolve::removeDependentFreeCols Removed %d rows and %d nonzeros",
+  //      (int)num_removed_row, (int)num_removed_nz);
+  //  if (num_fictitious_cols_skipped)
+  //    highsLogDev(options->log_options, HighsLogType::kInfo,
+  //                ", avoiding %d fictitious rows",
+  //                (int)num_fictitious_cols_skipped);
+  //  highsLogDev(options->log_options, HighsLogType::kInfo, "\n");
+  //
+  //  analysis_.logging_on_ = logging_on;
+  //  if (logging_on)
+  //  analysis_.stopPresolveRuleLog(kPresolveRuleDependentFreeCols);
+  //
+  //  return Result::kOk;
 }
 
 HPresolve::Result HPresolve::aggregator(HighsPostsolveStack& postsolve_stack) {

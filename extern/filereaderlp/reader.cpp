@@ -2,6 +2,7 @@
 
 #include "builder.hpp"
 
+#include <cctype>
 #include <cstring>
 #include <cassert>
 #include <iostream>
@@ -115,6 +116,8 @@ std::unordered_map<std::string, LpSectionKeyword> sectionkeywordmap {
    { "general", LpSectionKeyword::GEN },
    { "generals", LpSectionKeyword::GEN },
    { "gen", LpSectionKeyword::GEN },
+   { "integer", LpSectionKeyword::GEN },
+   { "integers", LpSectionKeyword::GEN },
    { "semi-continuous", LpSectionKeyword::SEMI },
    { "semi", LpSectionKeyword::SEMI },
    { "semis", LpSectionKeyword::SEMI },
@@ -174,7 +177,11 @@ struct ProcessedToken {
 
    ProcessedToken(ProcessedTokenType t, const std::string& s) : type(t) {
       assert(t == ProcessedTokenType::CONID || t == ProcessedTokenType::VARID);
+#ifndef _WIN32
       name = strdup(s.c_str());
+#else
+      name = _strdup(s.c_str());
+#endif
    };
 
    ProcessedToken(double v) : type(ProcessedTokenType::CONST), value(v) {};
@@ -663,7 +670,7 @@ void Reader::processgensec() {
 }
 
 void Reader::processsemisec() {
-   if(!sectiontokens.count(LpSectionKeyword::GEN))
+   if(!sectiontokens.count(LpSectionKeyword::SEMI))
       return;
    std::vector<ProcessedToken>::iterator& begin(sectiontokens[LpSectionKeyword::SEMI].first);
    std::vector<ProcessedToken>::iterator& end(sectiontokens[LpSectionKeyword::SEMI].second);

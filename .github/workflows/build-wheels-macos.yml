@@ -44,6 +44,10 @@ jobs:
 
       - name: Build wheels
         run: |
+<<<<<<< HEAD:.github/workflows/build-wheels-macos.yml
+=======
+          cd  $GITHUB_WORKSPACE
+>>>>>>> latest:.github/workflows/build-wheels.yml
           export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
           export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           export DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
