@@ -17,19 +17,11 @@ test-skip = ""
 [tool.cibuildwheel.linux]
 archs = ["x86_64 i686"]
 before-all = [
-<<<<<<<< HEAD:highs/python/pyproject.toml
-  "cd /project & ls",
-  "rm -rf build && mkdir build",
-]
-
-before-build = [
-========
   "cd /project && ls"
 ]
 
 before-build = [
   "rm -rf build",
->>>>>>>> latest:pyproject.toml
   "mkdir -p build && cd build",
   "cmake -DFAST_BUILD=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=/project/installs/highs ..",
   "make -j && make install",
@@ -53,6 +45,4 @@ archs = ["AMD64"]
 
 # Use delvewheel on windows
 before-build = "pip install delvewheel"
-repair-wheel-command = [
-  "delvewheel repair -w {dest_dir} {wheel}"
-]
+repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"

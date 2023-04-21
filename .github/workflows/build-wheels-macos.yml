@@ -45,7 +45,7 @@ jobs:
           export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           export DYLD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
           ls $REPAIR_LIBRARY_PATH
-          python -m cibuildwheel --output-dir wheelhouse ./highs/python
+          python -m cibuildwheel --output-dir wheelhouse 
 
         # export REPAIR_LIBRARY_PATH=${{runner.workspace}}/installs/highs/lib
         # export LD_LIBRARY_PATH=$REPAIR_LIBRARY_PATH
