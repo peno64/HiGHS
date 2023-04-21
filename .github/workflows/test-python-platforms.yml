@@ -50,5 +50,5 @@ jobs:
         shell: bash
         working-directory: ${{runner.workspace}}
         run: |
-          pip install -e ./HiGHS/highs/python/
-          nosetests -v ./HiGHS/highs/python/
+          pip install -e ./HiGHS
+          nosetests -v ./HiGHS
