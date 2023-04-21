@@ -911,14 +911,17 @@ HighsStatus Highs::run() {
     highsLogDev(options_.log_options, HighsLogType::kVerbose,
                 "Solving model: %s\n", model_.lp_.model_name_.c_str());
 
-  // Check validity of any integrality, keeping a record of any upper
-  // bound modifications for semi-variables
-  call_status = assessIntegrality(model_.lp_, options_);
-  if (call_status == HighsStatus::kError) {
-    setHighsModelStatusAndClearSolutionAndBasis(HighsModelStatus::kSolveError);
-    return returnFromRun(HighsStatus::kError);
+  if (!options_.solve_relaxation) {
+    // Not solving the relaxation, so check validity of any
+    // integrality, keeping a record of any bound and type
+    // modifications for semi-variables
+    call_status = assessIntegrality(model_.lp_, options_);
+    if (call_status == HighsStatus::kError) {
+      setHighsModelStatusAndClearSolutionAndBasis(
+          HighsModelStatus::kSolveError);
+      return returnFromRun(HighsStatus::kError);
+    }
   }
-
   if (!options_.solver.compare(kHighsChooseString)) {
     // Leaving HiGHS to choose method according to model class
     if (model_.isQp()) {
@@ -3146,6 +3149,7 @@ HighsStatus Highs::callSolveMip() {
     // solution from the MIP solver
     solution_.col_value.resize(model_.lp_.num_col_);
     solution_.col_value = solver.solution_;
+    saved_objective_and_solution_ = solver.saved_objective_and_solution_;
     model_.lp_.a_matrix_.productQuad(solution_.row_value, solution_.col_value);
     solution_.value_valid = true;
   } else {
