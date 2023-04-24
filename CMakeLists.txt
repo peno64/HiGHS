@@ -206,6 +206,10 @@ include(CheckCXXCompilerFlag)
 
 if (NOT FAST_BUILD)
 
+  if(NOT CMAKE_BUILD_TYPE)
+      set(CMAKE_BUILD_TYPE RELEASE)
+  endif()
+
   option(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS "Export all symbols into the DLL" ON)
 
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${HIGHS_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
