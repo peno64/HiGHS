@@ -28,11 +28,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# set default build type before project call, as it otherwise seems to fail for some plattforms
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE RELEASE)
-endif()
-
 # Default Build Type to be Release
 get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(isMultiConfig)
@@ -115,6 +110,11 @@ option(ZLIB "Fast build: " ON)
 
 # For Python interface
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+    set(HiGHSRELEASE ON)
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # Basic type
 include(CMakePushCheckState)
@@ -412,7 +412,7 @@ option(SHARED "Build shared libraries" ON)
 set(BUILD_SHARED_LIBS ${SHARED})
 message(STATUS "Build shared libraries: " ${SHARED})
 
-if(CMAKE_BUILD_TYPE STREQUAL RELEASE)
+if(CMAKE_BUILD_TYPE STREQUAL Release)
     set(HiGHSRELEASE ON)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -474,10 +474,6 @@ message(STATUS "FAST_BUILD set to on.
 
 option(EXP "Experimental mode: run unit tests with doctest." OFF)
 
-if(CMAKE_BUILD_TYPE STREQUAL RELEASE)
-    set(HiGHSRELEASE ON)
-endif()
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # configure_file(${HIGHS_SOURCE_DIR}/src/HConfig.h.in ${HIGHS_BINARY_DIR}/HConfig.h)
 
