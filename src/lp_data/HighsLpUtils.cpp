@@ -798,7 +798,8 @@ bool considerScaling(const HighsOptions& options, HighsLp& lp) {
   return new_scaling;
 }
 
-void scaleLp(const HighsOptions& options, HighsLp& lp) {
+void scaleLp(const HighsOptions& options, HighsLp& lp,
+             const bool force_scaling) {
   lp.clearScaling();
   HighsInt numCol = lp.num_col_;
   HighsInt numRow = lp.num_row_;
@@ -828,14 +829,15 @@ void scaleLp(const HighsOptions& options, HighsLp& lp) {
   double original_matrix_min_value = kHighsInf;
   double original_matrix_max_value = 0;
   lp.a_matrix_.range(original_matrix_min_value, original_matrix_max_value);
-  bool no_scaling =
-      (original_matrix_min_value >= no_scaling_original_matrix_min_value) &&
-      (original_matrix_max_value <= no_scaling_original_matrix_max_value);
-  const bool force_scaling = false;
-  if (force_scaling) {
-    no_scaling = false;
-    printf("!!!! FORCE SCALING !!!!\n");
-  }
+  // Possibly force scaling, otherwise base the decision on the range
+  // of values in the matrix, values that will be used later for
+  // reporting
+  const bool no_scaling = force_scaling
+                              ? false
+                              : (original_matrix_min_value >=
+                                 no_scaling_original_matrix_min_value) &&
+                                    (original_matrix_max_value <=
+                                     no_scaling_original_matrix_max_value);
   bool scaled_matrix = false;
   if (no_scaling) {
     // No matrix scaling, but possible cost scaling
@@ -1229,6 +1231,24 @@ bool maxValueScaleMatrix(const HighsOptions& options, HighsLp& lp,
 
   assert(options.simplex_scale_strategy == kSimplexScaleStrategyMaxValue015 ||
          options.simplex_scale_strategy == kSimplexScaleStrategyMaxValue0157);
+
+  // The 015(7) values refer to bit settings in FICO's scaling options.
+  // Specifically
+  //
+  // 0: Row scaling
+  //
+  // 1: Column scaling
+  //
+  // 5: Scale by maximum element
+  //
+  // 7: Scale objective function for the simplex method
+  //
+  // Note that 7 is not yet implemented, so
+  // kSimplexScaleStrategyMaxValue015 and
+  // kSimplexScaleStrategyMaxValue0157 are equivalent. However, cost
+  // scaling could be well worth adding, now that the unscaled problem
+  // can be solved using scaled NLA
+
   const double log2 = log(2.0);
   const double max_allow_scale = pow(2.0, options.allowed_matrix_scale_factor);
   const double min_allow_scale = 1 / max_allow_scale;
@@ -1310,7 +1330,7 @@ bool maxValueScaleMatrix(const HighsOptions& options, HighsLp& lp,
 
   const double improvement_factor_required = 1.0;
   const bool poor_improvement =
-      improvement_factor < improvement_factor_required;
+      improvement_factor <= improvement_factor_required;
 
   if (poor_improvement) {
     // Unscale the matrix
@@ -1451,6 +1471,7 @@ void deleteColsFromLpVectors(HighsLp& lp, HighsInt& new_num_col,
   HighsInt col_dim = lp.num_col_;
   new_num_col = 0;
   bool have_names = lp.col_names_.size();
+  bool have_integrality = lp.integrality_.size();
   for (HighsInt k = from_k; k <= to_k; k++) {
     updateOutInIndex(index_collection, delete_from_col, delete_to_col,
                      keep_from_col, keep_to_col, current_set_entry);
@@ -1463,6 +1484,7 @@ void deleteColsFromLpVectors(HighsLp& lp, HighsInt& new_num_col,
       lp.col_lower_[new_num_col] = lp.col_lower_[col];
       lp.col_upper_[new_num_col] = lp.col_upper_[col];
       if (have_names) lp.col_names_[new_num_col] = lp.col_names_[col];
+      if (have_integrality) lp.integrality_[new_num_col] = lp.integrality_[col];
       new_num_col++;
     }
     if (keep_to_col >= col_dim - 1) break;

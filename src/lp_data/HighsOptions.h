@@ -393,6 +393,7 @@ struct HighsOptionsStruct {
   double mip_rel_gap;
   double mip_abs_gap;
   double mip_heuristic_effort;
+  double mip_min_logging_interval;
 #ifdef HIGHS_DEBUGSOL
   std::string mip_debug_solution_file;
 #endif
@@ -543,12 +544,14 @@ class HighsOptions : public HighsOptionsStruct {
     records.push_back(record_double);
 
     record_double = new OptionRecordDouble(
-        "objective_bound", "Objective bound for termination", advanced,
-        &objective_bound, -kHighsInf, kHighsInf, kHighsInf);
+        "objective_bound", "Objective bound for termination of dual simplex",
+        advanced, &objective_bound, -kHighsInf, kHighsInf, kHighsInf);
     records.push_back(record_double);
 
     record_double = new OptionRecordDouble(
-        "objective_target", "Objective target for termination", now_advanced,
+        "objective_target", "Objective target for termination of MIP solver",
+        advanced,
+        //"primal simplex and "
         &objective_target, -kHighsInf, -kHighsInf, kHighsInf);
     records.push_back(record_double);
 
@@ -775,7 +778,8 @@ class HighsOptions : public HighsOptionsStruct {
 
     record_string = new OptionRecordString(
         "mip_improving_solution_file",
-        "File for reporting improving MIP solutions: not reported if \"\"",
+        "File for reporting improving MIP solutions: not reported for an empty "
+        "string \"\"",
         advanced, &mip_improving_solution_file, kHighsFilenameDefault);
     records.push_back(record_string);
 
@@ -855,6 +859,11 @@ class HighsOptions : public HighsOptionsStruct {
         "Tolerance on absolute gap of MIP, |ub-lb|, to determine whether "
         "optimality has been reached for a MIP instance",
         advanced, &mip_abs_gap, 0.0, 1e-6, kHighsInf);
+    records.push_back(record_double);
+
+    record_double = new OptionRecordDouble(
+        "mip_min_logging_interval", "MIP minimum logging interval", advanced,
+        &mip_min_logging_interval, 0, 5, kHighsInf);
     records.push_back(record_double);
 
     record_int = new OptionRecordInt(
@@ -1099,14 +1108,12 @@ class HighsOptions : public HighsOptionsStruct {
     records.push_back(record_bool);
 
     // Set up the log_options aliases
+    log_options.clear();
     log_options.log_stream =
-        log_file.empty() ? NULL : fopen(log_file.c_str(), "w");
+        log_file.empty() ? nullptr : fopen(log_file.c_str(), "w");
     log_options.output_flag = &output_flag;
     log_options.log_to_console = &log_to_console;
     log_options.log_dev_level = &log_dev_level;
-    log_options.log_highs_callback = nullptr;
-    log_options.log_user_callback = nullptr;
-    log_options.log_user_callback_data = nullptr;
   }
 
   void deleteRecords() {

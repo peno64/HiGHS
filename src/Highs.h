@@ -16,6 +16,7 @@
 
 #include <sstream>
 
+#include "lp_data/HighsCallback.h"
 #include "lp_data/HighsLpUtils.h"
 #include "lp_data/HighsRanging.h"
 #include "lp_data/HighsSolutionDebug.h"
@@ -185,7 +186,12 @@ class Highs {
   HighsStatus run();
 
   /**
-   * @brief Postsolve the incumbent model
+   * @brief Postsolve the incumbent model using a solution
+   */
+  HighsStatus postsolve(const HighsSolution& solution);
+
+  /**
+   * @brief Postsolve the incumbent model using a solution and basis
    */
   HighsStatus postsolve(const HighsSolution& solution, const HighsBasis& basis);
 
@@ -1011,11 +1017,22 @@ class Highs {
   HighsStatus setSolution(const HighsSolution& solution);
 
   /**
-   * @brief Set the callback method and user data to use for logging
+   * @brief Set the callback method to use for HiGHS
    */
-  HighsStatus setLogCallback(void (*log_user_callback)(HighsLogType,
-                                                       const char*, void*),
-                             void* log_user_callback_data = nullptr);
+  HighsStatus setCallback(void (*user_callback)(const int, const char*,
+                                                const HighsCallbackDataOut*,
+                                                HighsCallbackDataIn*, void*),
+                          void* user_callback_data = nullptr);
+
+  /**
+   * @brief Start callback of given type
+   */
+  HighsStatus startCallback(const int callback_type);
+
+  /**
+   * @brief Stop callback of given type
+   */
+  HighsStatus stopCallback(const int callback_type);
 
   /**
    * @brief Use the HighsBasis passed to set the internal HighsBasis
@@ -1146,6 +1163,10 @@ class Highs {
 
   // Start of deprecated methods
 
+  HighsStatus setLogCallback(void (*user_log_callback)(HighsLogType,
+                                                       const char*, void*),
+                             void* user_log_callback_data = nullptr);
+
   HighsInt getNumCols() const {
     deprecationMessage("getNumCols", "getNumCol");
     return getNumCol();
@@ -1250,6 +1271,7 @@ class Highs {
   HighsModel presolved_model_;
   HighsTimer timer_;
 
+  HighsCallback callback_;
   HighsOptions options_;
   HighsInfo info_;
   HighsRanging ranging_;
@@ -1288,7 +1310,8 @@ class Highs {
                                const HighsBasis& basis);
 
   PresolveComponent presolve_;
-  HighsPresolveStatus runPresolve(const bool force_presolve = false);
+  HighsPresolveStatus runPresolve(const bool force_lp_presolve,
+                                  const bool force_presolve = false);
   HighsPostsolveStatus runPostsolve();
 
   HighsStatus openWriteFile(const string filename, const string method_name,
