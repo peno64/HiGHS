@@ -6,7 +6,10 @@
     ]
   },
   "ExpandedNodes": [
-    ""
+    "",
+    "\\src",
+    "\\src\\lp_data"
   ],
+  "SelectedNode": "\\src\\lp_data\\HighsSolution.cpp",
   "PreviewInSolutionExplorer": false
 }
